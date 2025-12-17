@@ -1,0 +1,264 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MARKETER
+}
+
+enum OrderStatus {
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum WithdrawalStatus {
+  PENDING
+  PAID
+}
+
+enum WithdrawalMethod {
+  BARIDI_MOB
+  CCP
+  PHONE_CREDIT
+}
+
+enum DeliveryMethod {
+  HOME
+  OFFICE
+}
+
+model User {
+  id                String       @id @default(cuid())
+  email             String       @unique
+  password          String
+  role              UserRole     @default(MARKETER)
+  firstName         String?
+  lastName          String?
+  phone             String?
+  baridiMobNumber   String?
+  ccpNumber         String?
+  phoneForCredit    String?
+  balance           Float        @default(0)
+  withdrawableBalance Float      @default(0)
+  isActive          Boolean      @default(true)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  
+  orders            Order[]
+  withdrawals       Withdrawal[]
+  referrals         Referral[]   @relation("ReferrerReferrals")
+  referredBy        Referral?    @relation("ReferredUserReferral")
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  products    Product[]
+}
+
+model Offer {
+  id              String    @id @default(cuid())
+  name            String
+  description     String?
+  discountPercent Float?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  products        Product[]
+}
+
+model Product {
+  id                  String              @id @default(cuid())
+  name                String
+  marketingTitle      String
+  marketingDescription String            @db.Text
+  basePrice           Float
+  priceAfterDiscount  Float?
+  images              String[]
+  isActive            Boolean             @default(true)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  categoryId          String?
+  category            Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  
+  offerId             String?
+  offer               Offer?              @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  
+  options             ProductOption[]
+  orderItems          OrderItem[]
+  bundleProducts      BundleProduct[]
+}
+
+model ProductOption {
+  id          String                @id @default(cuid())
+  name        String
+  productId   String
+  product     Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  values      ProductOptionValue[]
+  
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+}
+
+model ProductOptionValue {
+  id              String          @id @default(cuid())
+  value           String
+  optionId        String
+  option          ProductOption   @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model Bundle {
+  id              String          @id @default(cuid())
+  name            String
+  description     String?
+  totalPrice      Float
+  commission      Float
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  products        BundleProduct[]
+  orderItems      OrderItem[]
+}
+
+model BundleProduct {
+  id          String   @id @default(cuid())
+  bundleId    String
+  bundle      Bundle   @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  quantity    Int      @default(1)
+  createdAt   DateTime @default(now())
+  
+  @@unique([bundleId, productId])
+}
+
+model Wilaya {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  name        String
+  
+  communes    Commune[]
+  shippingPrices ShippingPrice[]
+  orders      Order[]
+  
+  createdAt   DateTime  @default(now())
+}
+
+model Commune {
+  id          String   @id @default(cuid())
+  name        String
+  wilayaCode  String
+  wilaya      Wilaya   @relation(fields: [wilayaCode], references: [code], onDelete: Cascade)
+  
+  orders      Order[]
+  
+  createdAt   DateTime @default(now())
+}
+
+model ShippingPrice {
+  id          String   @id @default(cuid())
+  wilayaCode  String   @unique
+  wilaya      Wilaya   @relation(fields: [wilayaCode], references: [code], onDelete: Cascade)
+  
+  price       Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Order {
+  id              String         @id @default(cuid())
+  orderNumber     String         @unique
+  
+  customerFirstName String
+  customerLastName  String
+  customerPhone     String
+  
+  wilayaCode      String
+  wilaya          Wilaya         @relation(fields: [wilayaCode], references: [code])
+  
+  communeId       String
+  commune         Commune        @relation(fields: [communeId], references: [id])
+  
+  deliveryMethod  DeliveryMethod
+  shippingCost    Float
+  
+  totalAmount     Float
+  commission      Float
+  
+  status          OrderStatus    @default(PROCESSING)
+  
+  marketerId      String
+  marketer        User           @relation(fields: [marketerId], references: [id])
+  
+  items           OrderItem[]
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model OrderItem {
+  id              String   @id @default(cuid())
+  orderId         String
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  productId       String?
+  product         Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  
+  bundleId        String?
+  bundle          Bundle?  @relation(fields: [bundleId], references: [id], onDelete: SetNull)
+  
+  quantity        Int      @default(1)
+  price           Float
+  
+  selectedVariants Json?
+  
+  createdAt       DateTime @default(now())
+}
+
+model Withdrawal {
+  id              String           @id @default(cuid())
+  amount          Float
+  method          WithdrawalMethod
+  accountNumber   String
+  status          WithdrawalStatus @default(PENDING)
+  
+  marketerId      String
+  marketer        User             @relation(fields: [marketerId], references: [id])
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model Referral {
+  id              String   @id @default(cuid())
+  referrerId      String
+  referrer        User     @relation("ReferrerReferrals", fields: [referrerId], references: [id])
+  
+  referredUserId  String   @unique
+  referredUser    User     @relation("ReferredUserReferral", fields: [referredUserId], references: [id])
+  
+  isActive        Boolean  @default(false)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
