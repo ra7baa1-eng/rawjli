@@ -2,19 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-
-export default function MarketerAddProduct() {
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [uploadedImages, setUploadedImages] = useState<File[]>([])
- Form)
-  const [formData, setFormData] = useState({
-    nameprtName:---
-
-import { useState useState } from 'react'
-import { useRouter } from 'next'
 import { useSession } from 'next-auth/react'
 
 export default function MarketerAddProduct() {
@@ -68,7 +55,6 @@ export default function MarketerAddProduct() {
     }
 
     try {
-      // Create form data for file upload
       const productFormData = new FormData()
       productFormData.append('productName', formData.productName)
       productFormData.append('categoryId', formData.categoryId)
@@ -78,8 +64,7 @@ export default function MarketerAddProduct() {
       productFormData.append('commission', formData.commission)
       productFormData.append('marketerId', session?.user?.id || '')
 
-      // Add images
-      uploadedImages.forEach((image, index) => {
+      uploadedImages.forEach((image) => {
         productFormData.append(`images`, image)
       })
 
@@ -90,7 +75,6 @@ export default function MarketerAddProduct() {
 
       if (res.ok) {
         setSuccess('تم إضافة المنتج بنجاح!')
-        // Reset form
         setFormData({
           productName: '',
           categoryId: '',
@@ -117,7 +101,6 @@ export default function MarketerAddProduct() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-6">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-blue-500">
             إضافة منتج جديد
@@ -130,7 +113,6 @@ export default function MarketerAddProduct() {
           </button>
         </div>
 
-        {/* Success/Error Messages */}
         {success && (
           <div className="bg-green-500/20 border border-green-500 text-green-300 px-4 py-3 rounded-lg mb-6">
             {success}
@@ -143,10 +125,8 @@ export default function MarketerAddProduct() {
           </div>
         )}
 
-        {/* Product Form */}
         <div className="bg-black/40 backdrop-blur-lg rounded-3xl p-8 border border-pink-500/30 shadow-2xl">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Product Name with Copy Button */}
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-pink-300 text-sm">اسم المنتج *</label>
@@ -168,7 +148,6 @@ export default function MarketerAddProduct() {
               />
             </div>
 
-            {/* Category with Manage Button */}
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-pink-300 text-sm">الفئة *</label>
@@ -196,7 +175,6 @@ export default function MarketerAddProduct() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Price */}
               <div>
                 <label className="block text-pink-300 text-sm mb-2">السعر (دج) *</label>
                 <input
@@ -211,7 +189,6 @@ export default function MarketerAddProduct() {
                 />
               </div>
 
-              {/* Quantity */}
               <div>
                 <label className="block text-pink-300 text-sm mb-2">الكمية *</label>
                 <input
@@ -226,7 +203,6 @@ export default function MarketerAddProduct() {
               </div>
             </div>
 
-            {/* Commission */}
             <div>
               <label className="block text-pink-300 text-sm mb-2">عمولتك (%)</label>
               <input
@@ -241,7 +217,6 @@ export default function MarketerAddProduct() {
               />
             </div>
 
-            {/* Product Description with Copy Button */}
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-pink-300 text-sm">وصف المنتج</label>
@@ -262,7 +237,6 @@ export default function MarketerAddProduct() {
               />
             </div>
 
-            {/* Image Upload */}
             <div>
               <label className="block text-pink-300 text-sm mb-2">صور المنتج</label>
               <div className="border-2 border-dashed border-pink-500/30 rounded-lg p-6 text-center">
@@ -284,7 +258,6 @@ export default function MarketerAddProduct() {
                 <p className="text-gray-500 text-xs mt-1">PNG, JPG, GIF حتى 10MB</p>
               </div>
 
-              {/* Uploaded Images Preview */}
               {uploadedImages.length > 0 && (
                 <div className="mt-4">
                   <p className="text-pink-300 text-sm mb-2">الصور المرفوعة ({uploadedImages.length})</p>
@@ -311,7 +284,6 @@ export default function MarketerAddProduct() {
               )}
             </div>
 
-            {/* Submit Buttons */}
             <div className="flex gap-4">
               <button
                 type="submit"
