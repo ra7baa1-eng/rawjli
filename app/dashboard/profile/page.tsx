@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 
+export const dynamic = 'force-dynamic'
+
 export default function MarketerProfile() {
   const router = useRouter()
-  const { data: session, status } = useSession()
-  const [user, setUser] = useState<any>(null)
+  const [session, setSession] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [formData, setFormData] = useState({
     firstName: '',
@@ -20,36 +21,49 @@ export default function MarketerProfile() {
   })
 
   useEffect(() => {
-    if (status === 'loading') return
-    if (status === 'unauthenticated') {
-      router.push('/login')
-      return
+    const getSession = async () => {
+      try {
+        const response = await fetch('/api/auth/session')
+        const sessionData = await response.json()
+        
+        if (!sessionData || sessionData.error) {
+          router.push('/login')
+          return
+        }
+        
+        setSession(sessionData)
+        
+        if (sessionData?.user?.id) {
+          fetch(`/api/users/${sessionData.user.id}`)
+            .then((res) => {
+              if (!res.ok) throw new Error('Failed to fetch user')
+              return res.json()
+            })
+            .then((data) => {
+              setFormData({
+                firstName: data.firstName || '',
+                lastName: data.lastName || '',
+                phone: data.phone || '',
+                baridiMobNumber: data.baridiMobNumber || '',
+                ccpNumber: data.ccpNumber || '',
+                phoneForCredit: data.phoneForCredit || '',
+                password: '',
+              })
+              setLoading(false)
+            })
+            .catch((error) => {
+              console.error('Error fetching user:', error)
+              setLoading(false)
+            })
+        }
+      } catch (error) {
+        console.error('Error getting session:', error)
+        router.push('/login')
+      }
     }
-    if (session?.user?.id) {
-      fetch(`/api/users/${session.user.id}`)
-        .then((res) => {
-          if (!res.ok) throw new Error('Failed to fetch user')
-          return res.json()
-        })
-        .then((data) => {
-          setUser(data)
-          setFormData({
-            firstName: data.firstName || '',
-            lastName: data.lastName || '',
-            phone: data.phone || '',
-            baridiMobNumber: data.baridiMobNumber || '',
-            ccpNumber: data.ccpNumber || '',
-            phoneForCredit: data.phoneForCredit || '',
-            password: '',
-          })
-          setLoading(false)
-        })
-        .catch((error) => {
-          console.error('Error fetching user:', error)
-          setLoading(false)
-        })
-    }
-  }, [session, status, router])
+    
+    getSession()
+  }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -75,7 +89,7 @@ export default function MarketerProfile() {
     }
   }
 
-  if (status === 'loading' || loading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
