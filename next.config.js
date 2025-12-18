@@ -12,7 +12,6 @@ const nextConfig = {
   },
   // Enable server actions
   experimental: {
-    serverActions: true,
     serverComponentsExternalPackages: ['@prisma/client'],
   },
   // Image optimization

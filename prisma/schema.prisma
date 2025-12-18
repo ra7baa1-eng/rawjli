@@ -177,8 +177,8 @@ model Commune {
 
 model ShippingPrice {
   id          String   @id @default(cuid())
-  wilayaCode  String   @unique
-  wilaya      Wilaya   @relation(fields: [wilayaCode], references: [code], onDelete: Cascade)
+  wilayaId    String   @unique
+  wilaya      Wilaya   @relation(fields: [wilayaId], references: [id], onDelete: Cascade)
   
   price       Float
   createdAt   DateTime @default(now())
