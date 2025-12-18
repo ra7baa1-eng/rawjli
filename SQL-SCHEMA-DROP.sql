@@ -52,6 +52,8 @@ CREATE TABLE "User" (
     "baridiMobNumber" TEXT,
     "ccpNumber" TEXT,
     "phoneForCredit" TEXT,
+    "balance" DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    "withdrawableBalance" DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
