@@ -43,27 +43,32 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 relative overflow-hidden">
-      <div className="absolute inset-0 bg-black/20"></div>
-      <div className="absolute inset-0">
-        <img src="/001.gif" alt="Background" className="w-full h-full object-cover opacity-30" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-10 left-10 w-32 h-32 bg-pink-500 rounded-full opacity-20 blur-xl animate-pulse"></div>
+        <div className="absolute bottom-10 right-10 w-40 h-40 bg-blue-500 rounded-full opacity-20 blur-xl animate-pulse"></div>
+        <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-green-500 rounded-full opacity-20 blur-xl animate-ping"></div>
       </div>
       
       <div className="max-w-md w-full space-y-8 relative z-10">
-        <div className="text-center">
-          <h2 className="mt-6 text-center text-4xl font-extrabold neon-text">
-            تسجيل الدخول - Rawjli
-          </h2>
-          <p className="mt-2 text-center text-lg text-purple-300">
-            منصة التجارة الإلكترونية الجزائرية
-          </p>
+        <div className="text-center mb-8">
+          <div className="inline-block">
+            <img src="/004.gif" alt="Rawjli Logo" className="w-32 h-32 mx-auto animate-bounce" />
+            <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-blue-500 mt-4">
+              راولي
+            </h1>
+          </div>
         </div>
+        <p className="mt-2 text-center text-lg text-purple-300">
+          منصة التجارة الإلكترونية الجزائرية
+        </p>
         
         <div className="card glow-effect">
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
-                <label htmlFor="email-address" className="block text-sm font-medium text-purple-300 mb-2">
+                <label htmlFor="email-address" className="block text-sm font-medium text-pink-300 mb-2">
                   البريد الإلكتروني
                 </label>
                 <input
@@ -72,14 +77,14 @@ export default function LoginPage() {
                   type="email"
                   autoComplete="email"
                   required
-                  className="input"
+                  className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-xl text-white placeholder-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-300"
                   placeholder="البريد الإلكتروني"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-purple-300 mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-pink-300 mb-2">
                   كلمة المرور
                 </label>
                 <input
@@ -88,7 +93,7 @@ export default function LoginPage() {
                   type="password"
                   autoComplete="current-password"
                   required
-                  className="input"
+                  className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-xl text-white placeholder-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-300"
                   placeholder="كلمة المرور"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -112,6 +117,15 @@ export default function LoginPage() {
               </button>
             </div>
           </form>
+        {/* Register Link */}
+          <div className="text-center mt-6">
+            <p className="text-pink-300">
+              ليس لديك حساب؟{' '}
+              <Link href="/register" className="text-blue-400 hover:text-blue-300 font-semibold underline transition-colors duration-300">
+                إنشاء حساب جديد
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>
