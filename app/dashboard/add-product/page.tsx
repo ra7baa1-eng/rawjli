@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react'
 
 export default function MarketerAddProduct() {
   const router = useRouter()
-  const { data: session } = useSession()
+  const session = useSession()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -62,7 +62,7 @@ export default function MarketerAddProduct() {
       productFormData.append('quantity', formData.quantity)
       productFormData.append('productDescription', formData.productDescription)
       productFormData.append('commission', formData.commission)
-      productFormData.append('marketerId', session?.user?.id || '')
+      productFormData.append('marketerId', session?.data?.user?.id || '')
 
       uploadedImages.forEach((image) => {
         productFormData.append(`images`, image)
@@ -96,6 +96,22 @@ export default function MarketerAddProduct() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (session.status === 'loading') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 flex items-center justify-center">
+        <div className="text-white text-2xl">جاري التحميل...</div>
+      </div>
+    )
+  }
+
+  if (!session.data) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 flex items-center justify-center">
+        <div className="text-white text-2xl">يجب تسجيل الدخول أولاً</div>
+      </div>
+    )
   }
 
   return (
