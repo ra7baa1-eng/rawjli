@@ -32,7 +32,7 @@ export default function Register() {
     }
 
     try {
-      const res = await fetch('/api/users', {
+      const res = await fetch('/api/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -46,7 +46,6 @@ export default function Register() {
           ccpNumber: formData.ccpNumber,
           phoneForCredit: formData.phoneForCredit,
           password: formData.password,
-          role: 'MARKETER',
         }),
       })
 
@@ -80,7 +79,7 @@ export default function Register() {
           <div className="inline-block">
             <img src="/004.gif" alt="Rawjli Logo" className="w-32 h-32 mx-auto animate-bounce" />
             <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-blue-500 mt-4">
-              راولي
+              راجلي
             </h1>
           </div>
         </div>

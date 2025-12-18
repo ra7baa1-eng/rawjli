@@ -39,7 +39,7 @@ export default function HomePage() {
             <div className="inline-block">
               <img src="/003.gif" alt="Rawjli Animation" className="w-64 h-64 mx-auto animate-pulse" />
               <h1 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-blue-500 to-purple-500 mt-6 animate-pulse">
-                راولي
+                راجلي
               </h1>
             </div>
             <p className="text-2xl text-pink-300 mt-4 animate-pulse">
