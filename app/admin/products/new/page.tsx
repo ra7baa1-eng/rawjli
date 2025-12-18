@@ -125,7 +125,7 @@ export default function NewProduct() {
     }
   }
 
-  if (!session || session.status === 'loading') {
+  if (session.status === 'loading') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
         <div className="text-white text-2xl">جاري التحميل...</div>
