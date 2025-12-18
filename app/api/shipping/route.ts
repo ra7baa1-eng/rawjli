@@ -10,13 +10,12 @@ export async function GET() {
         wilaya: true
       },
       orderBy: {
-        wilaya: {
-          name: 'asc'
-        }
+        price: 'asc'
       }
     })
     return NextResponse.json(shippingPrices)
   } catch (error) {
+    console.error('Error fetching shipping prices:', error)
     return NextResponse.json({ error: 'Failed to fetch shipping prices' }, { status: 500 })
   }
 }
