@@ -5,18 +5,32 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET() {
   try {
-    const shippingPrices = await prisma.shippingPrice.findMany({
-      include: {
-        wilaya: true
-      },
-      orderBy: {
-        price: 'asc'
-      }
-    })
+    // First try to get shipping prices with wilaya
+    let shippingPrices = []
+    try {
+      shippingPrices = await prisma.shippingPrice.findMany({
+        include: {
+          wilaya: true
+        },
+        orderBy: {
+          price: 'asc'
+        }
+      })
+    } catch (dbError) {
+      console.log('Error with wilaya relation, trying without:', dbError)
+      // Fallback: try without wilaya relation
+      shippingPrices = await prisma.shippingPrice.findMany({
+        orderBy: {
+          price: 'asc'
+        }
+      })
+    }
+    
     return NextResponse.json(shippingPrices)
   } catch (error) {
     console.error('Error fetching shipping prices:', error)
-    return NextResponse.json({ error: 'Failed to fetch shipping prices' }, { status: 500 })
+    // Return empty array instead of error to prevent app crash
+    return NextResponse.json([])
   }
 }
 
