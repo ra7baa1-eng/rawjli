@@ -133,10 +133,10 @@ export default function NewProduct() {
     )
   }
 
-  if (!session.data || session.data.user.role !== 'ADMIN') {
+  if (!session.data) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
-        <div className="text-white text-2xl">غير مصرح بالوصول</div>
+        <div className="text-white text-2xl">يجب تسجيل الدخول أولاً</div>
       </div>
     )
   }
