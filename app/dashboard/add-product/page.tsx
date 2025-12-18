@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
+import { Upload, X, Copy, Package, Tag, DollarSign, Box, FileText, Percent, ArrowLeft, FolderOpen } from 'lucide-react'
 
 export default function MarketerAddProduct() {
   const router = useRouter()
@@ -11,6 +12,7 @@ export default function MarketerAddProduct() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [uploadedImages, setUploadedImages] = useState<File[]>([])
+  const [dragActive, setDragActive] = useState(false)
   const [formData, setFormData] = useState({
     productName: '',
     categoryId: '',
@@ -28,19 +30,45 @@ export default function MarketerAddProduct() {
     { id: '6', name: 'رياضة' }
   ])
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    setUploadedImages(prev => [...prev, ...files])
-  }
+  const handleImageUpload = useCallback((files: FileList | null) => {
+    if (!files) return
+    const fileArray = Array.from(files).filter(file => 
+      file.type.startsWith('image/') && file.size <= 10 * 1024 * 1024
+    )
+    setUploadedImages(prev => [...prev, ...fileArray])
+  }, [])
 
-  const removeImage = (index: number) => {
+  const removeImage = useCallback((index: number) => {
     setUploadedImages(prev => prev.filter((_, i) => i !== index))
-  }
+  }, [])
 
-  const copyToClipboard = (text: string, type: string) => {
-    navigator.clipboard.writeText(text)
-    alert(`تم نسخ ${type} بنجاح!`)
-  }
+  const copyToClipboard = useCallback(async (text: string, type: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setSuccess(`تم نسخ ${type} بنجاح!`)
+      setTimeout(() => setSuccess(''), 2000)
+    } catch (err) {
+      setError('فشل في النسخ')
+      setTimeout(() => setError(''), 2000)
+    }
+  }, [])
+
+  const handleDrag = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true)
+    } else if (e.type === 'dragleave') {
+      setDragActive(false)
+    }
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+    handleImageUpload(e.dataTransfer.files)
+  }, [handleImageUpload])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -115,63 +143,84 @@ export default function MarketerAddProduct() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-blue-500">
-            إضافة منتج جديد
-          </h1>
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-4 md:p-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="p-2 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition-all duration-300"
+            >
+              <ArrowLeft className="w-5 h-5 text-white" />
+            </button>
+            <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-blue-500">
+              إضافة منتج جديد
+            </h1>
+          </div>
           <button
             onClick={() => router.push('/dashboard')}
-            className="px-6 py-3 bg-gray-600 text-white font-bold rounded-lg hover:bg-gray-700 transition-all duration-300"
+            className="px-6 py-3 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-all duration-300"
           >
-            العودة
+            العودة للوحة التحكم
           </button>
         </div>
 
+        {/* Messages */}
         {success && (
-          <div className="bg-green-500/20 border border-green-500 text-green-300 px-4 py-3 rounded-lg mb-6">
+          <div className="bg-green-500/20 border border-green-500 text-green-300 px-4 py-3 rounded-lg mb-6 animate-pulse">
             {success}
           </div>
         )}
 
         {error && (
-          <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg mb-6">
+          <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg mb-6 animate-pulse">
             {error}
           </div>
         )}
 
-        <div className="bg-black/40 backdrop-blur-lg rounded-3xl p-8 border border-pink-500/30 shadow-2xl">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-pink-300 text-sm">اسم المنتج *</label>
+        {/* Main Form */}
+        <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-6 md:p-8 border border-pink-500/30 shadow-2xl">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Product Name Section */}
+            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+              <div className="flex items-center gap-3 mb-4">
+                <Package className="w-5 h-5 text-pink-400" />
+                <h2 className="text-xl font-semibold text-white">اسم المنتج</h2>
+              </div>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  required
+                  value={formData.productName}
+                  onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
+                  className="flex-1 px-4 py-3 bg-white/10 border border-pink-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all"
+                  placeholder="أدخل اسم المنتج..."
+                />
                 <button
                   type="button"
                   onClick={() => copyToClipboard(formData.productName, 'اسم المنتج')}
-                  className="px-3 py-1 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded-lg hover:bg-blue-500/30 transition-colors text-sm"
+                  className="px-4 py-3 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded-lg hover:bg-blue-500/30 transition-all duration-300 flex items-center gap-2"
                 >
-                  نسخ العنوان
+                  <Copy className="w-4 h-4" />
+                  نسخ
                 </button>
               </div>
-              <input
-                type="text"
-                required
-                value={formData.productName}
-                onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
-                className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20"
-                placeholder="أدخل اسم المنتج"
-              />
             </div>
 
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-pink-300 text-sm">الفئة *</label>
+            {/* Category Section */}
+            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <Tag className="w-5 h-5 text-pink-400" />
+                  <h2 className="text-xl font-semibold text-white">الفئة</h2>
+                </div>
                 <button
                   type="button"
                   onClick={() => alert('إدارة الفئات قيد التطوير')}
-                  className="px-3 py-1 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-lg hover:bg-purple-500/30 transition-colors text-sm"
+                  className="px-4 py-2 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-lg hover:bg-purple-500/30 transition-all duration-300 flex items-center gap-2"
                 >
+                  <FolderOpen className="w-4 h-4" />
                   إدارة الفئات
                 </button>
               </div>
@@ -179,20 +228,24 @@ export default function MarketerAddProduct() {
                 required
                 value={formData.categoryId}
                 onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-lg text-white focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20"
+                className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-lg text-white focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all"
               >
-                <option value="">اختر الفئة</option>
+                <option value="" className="bg-gray-800">اختر الفئة</option>
                 {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
+                  <option key={category.id} value={category.id} className="bg-gray-800">
                     {category.name}
                   </option>
                 ))}
               </select>
             </div>
 
+            {/* Price and Quantity Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-pink-300 text-sm mb-2">السعر (دج) *</label>
+              <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+                <div className="flex items-center gap-3 mb-4">
+                  <DollarSign className="w-5 h-5 text-pink-400" />
+                  <h2 className="text-xl font-semibold text-white">السعر (دج)</h2>
+                </div>
                 <input
                   type="number"
                   required
@@ -200,27 +253,34 @@ export default function MarketerAddProduct() {
                   step="0.01"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20"
+                  className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all"
                   placeholder="0.00"
                 />
               </div>
 
-              <div>
-                <label className="block text-pink-300 text-sm mb-2">الكمية *</label>
+              <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+                <div className="flex items-center gap-3 mb-4">
+                  <Box className="w-5 h-5 text-pink-400" />
+                  <h2 className="text-xl font-semibold text-white">الكمية</h2>
+                </div>
                 <input
                   type="number"
                   required
                   min="0"
                   value={formData.quantity}
                   onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20"
+                  className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all"
                   placeholder="0"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-pink-300 text-sm mb-2">عمولتك (%)</label>
+            {/* Commission Section */}
+            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+              <div className="flex items-center gap-3 mb-4">
+                <Percent className="w-5 h-5 text-pink-400" />
+                <h2 className="text-xl font-semibold text-white">عمولتك (%)</h2>
+              </div>
               <input
                 type="number"
                 min="0"
@@ -228,71 +288,97 @@ export default function MarketerAddProduct() {
                 step="0.1"
                 value={formData.commission}
                 onChange={(e) => setFormData({ ...formData, commission: e.target.value })}
-                className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20"
+                className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all"
                 placeholder="10.0"
               />
             </div>
 
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-pink-300 text-sm">وصف المنتج</label>
+            {/* Description Section */}
+            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <FileText className="w-5 h-5 text-pink-400" />
+                  <h2 className="text-xl font-semibold text-white">وصف المنتج</h2>
+                </div>
                 <button
                   type="button"
                   onClick={() => copyToClipboard(formData.productDescription, 'وصف المنتج')}
-                  className="px-3 py-1 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded-lg hover:bg-blue-500/30 transition-colors text-sm"
+                  className="px-4 py-2 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded-lg hover:bg-blue-500/30 transition-all duration-300 flex items-center gap-2"
                 >
+                  <Copy className="w-4 h-4" />
                   نسخ الوصف
                 </button>
               </div>
               <textarea
-                rows={4}
+                rows={6}
                 value={formData.productDescription}
                 onChange={(e) => setFormData({ ...formData, productDescription: e.target.value })}
-                className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20"
+                className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all resize-none"
                 placeholder="أدخل وصفاً مفصلاً للمنتج..."
               />
             </div>
 
-            <div>
-              <label className="block text-pink-300 text-sm mb-2">صور المنتج</label>
-              <div className="border-2 border-dashed border-pink-500/30 rounded-lg p-6 text-center">
+            {/* Image Upload Section */}
+            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+              <div className="flex items-center gap-3 mb-4">
+                <Upload className="w-5 h-5 text-pink-400" />
+                <h2 className="text-xl font-semibold text-white">صور المنتج</h2>
+              </div>
+              
+              <div
+                className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${
+                  dragActive 
+                    ? 'border-pink-500 bg-pink-500/10' 
+                    : 'border-pink-500/30 hover:border-pink-500/50'
+                }`}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+              >
                 <input
                   type="file"
                   multiple
                   accept="image/*"
-                  onChange={handleImageUpload}
+                  onChange={(e) => handleImageUpload(e.target.files)}
                   className="hidden"
                   id="image-upload"
                 />
                 <label
                   htmlFor="image-upload"
-                  className="cursor-pointer inline-block px-4 py-2 bg-pink-500/20 text-pink-300 border border-pink-500/30 rounded-lg hover:bg-pink-500/30 transition-colors"
+                  className="cursor-pointer inline-flex flex-col items-center gap-3"
                 >
-                  اختيار صور
+                  <Upload className="w-12 h-12 text-pink-400" />
+                  <span className="text-white font-medium">اختر الصور أو اسحبها هنا</span>
+                  <span className="text-gray-400 text-sm">PNG, JPG, GIF حتى 10MB لكل صورة</span>
+                  <span className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors">
+                    اختيار الصور
+                  </span>
                 </label>
-                <p className="text-gray-400 text-sm mt-2">أو اسحب وأفلت الصور هنا</p>
-                <p className="text-gray-500 text-xs mt-1">PNG, JPG, GIF حتى 10MB</p>
               </div>
 
+              {/* Uploaded Images Preview */}
               {uploadedImages.length > 0 && (
-                <div className="mt-4">
-                  <p className="text-pink-300 text-sm mb-2">الصور المرفوعة ({uploadedImages.length})</p>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="mt-6">
+                  <h3 className="text-white font-medium mb-4">الصور المرفوعة ({uploadedImages.length})</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                     {uploadedImages.map((image, index) => (
                       <div key={index} className="relative group">
-                        <img
-                          src={URL.createObjectURL(image)}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg border border-pink-500/30"
-                        />
+                        <div className="aspect-square rounded-lg overflow-hidden border border-pink-500/30">
+                          <img
+                            src={URL.createObjectURL(image)}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
                         <button
                           type="button"
                           onClick={() => removeImage(index)}
-                          className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs"
+                          className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-600"
                         >
-                          ×
+                          <X className="w-4 h-4" />
                         </button>
-                        <p className="text-xs text-gray-400 mt-1 truncate">{image.name}</p>
+                        <p className="text-xs text-gray-400 mt-2 truncate">{image.name}</p>
                       </div>
                     ))}
                   </div>
@@ -300,18 +386,19 @@ export default function MarketerAddProduct() {
               )}
             </div>
 
-            <div className="flex gap-4">
+            {/* Submit Buttons */}
+            <div className="flex flex-col md:flex-row gap-4">
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 py-3 bg-gradient-to-r from-pink-500 to-blue-500 text-white font-bold rounded-lg hover:from-pink-600 hover:to-blue-600 transition-all duration-300 disabled:opacity-50"
+                className="flex-1 py-4 bg-gradient-to-r from-pink-500 to-blue-500 text-white font-bold rounded-lg hover:from-pink-600 hover:to-blue-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
               >
                 {loading ? 'جاري الإضافة...' : 'إضافة المنتج'}
               </button>
               <button
                 type="button"
                 onClick={() => router.push('/dashboard')}
-                className="px-6 py-3 bg-gray-600 text-white font-bold rounded-lg hover:bg-gray-700 transition-all duration-300"
+                className="px-8 py-4 bg-gray-600 text-white font-bold rounded-lg hover:bg-gray-700 transition-all duration-300 text-lg"
               >
                 إلغاء
               </button>
