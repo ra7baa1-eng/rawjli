@@ -165,10 +165,3 @@ export default function AdminDashboard() {
     </div>
   )
 }
-        <p className="text-5xl font-bold text-green-600">
-          {stats?.totalRevenue?.toLocaleString() || 0} دج
-        </p>
-      </div>
-    </div>
-  )
-}
