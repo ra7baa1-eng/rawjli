@@ -42,10 +42,10 @@ export default function MarketerAddProduct() {
       }
     }
 
-    if (session && session.data) {
+    if (session?.data) {
       fetchCategories()
     }
-  }, [session])
+  }, [session?.data])
 
   const handleImageUpload = useCallback((files: FileList | null) => {
     if (!files) return
@@ -94,7 +94,9 @@ export default function MarketerAddProduct() {
     setSuccess('')
 
     console.log('Form data:', formData)
-    console.log('Session:', session?.data?.user?.id)
+    console.log('Session:', session)
+    console.log('Session data:', session?.data)
+    console.log('Session user:', session?.data?.user)
 
     if (!formData.productName || !formData.price || !formData.quantity || !formData.categoryId) {
       setError('الرجاء ملء جميع الحقول المطلوبة (اسم المنتج، الفئة، السعر، والكمية)')
