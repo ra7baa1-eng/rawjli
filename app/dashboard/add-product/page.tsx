@@ -68,7 +68,7 @@ export default function AddProductPage() {
     }
 
     // Only fetch if user is authenticated
-    if (status === 'authenticated' && session?.user?.id) {
+    if (status === 'authenticated' && session && session.user && session.user.id) {
       fetchCategories()
     }
   }, [status, session?.user?.id])
@@ -129,7 +129,7 @@ export default function AddProductPage() {
       return
     }
 
-    if (!session?.user?.id) {
+    if (!session || !session.user || !session.user.id) {
       setError('يجب تسجيل الدخول أولاً')
       setLoading(false)
       return
@@ -145,7 +145,7 @@ export default function AddProductPage() {
       productFormData.append('marketingTitle', formData.marketingTitle)
       productFormData.append('marketingDescription', formData.marketingDescription)
       productFormData.append('description', formData.description)
-      productFormData.append('marketerId', session.user.id)
+      productFormData.append('marketerId', session?.user?.id || '')
 
       uploadedImages.forEach((image, index) => {
         productFormData.append(`image${index}`, image)
