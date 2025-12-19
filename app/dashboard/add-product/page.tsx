@@ -1,29 +1,50 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
-import { Upload, X, Copy, Package, Tag, DollarSign, Box, FileText, Percent, ArrowLeft, FolderOpen } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Upload, X, Copy, Plus, ArrowRight, Package, Tag, DollarSign, Box, FileText, Image as ImageIcon } from 'lucide-react'
 
-export default function MarketerAddProduct() {
+interface Category {
+  id: string
+  name: string
+  _count?: {
+    products: number
+  }
+}
+
+interface FormData {
+  productName: string
+  categoryId: string
+  price: string
+  quantity: string
+  commission: string
+  marketingTitle: string
+  marketingDescription: string
+  description: string
+}
+
+export default function AddProductPage() {
   const router = useRouter()
-  const session = useSession()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [uploadedImages, setUploadedImages] = useState<File[]>([])
-  const [dragActive, setDragActive] = useState(false)
-  const [formData, setFormData] = useState({
+  const { data: session, status } = useSession()
+  const [formData, setFormData] = useState<FormData>({
     productName: '',
     categoryId: '',
     price: '',
     quantity: '',
-    productDescription: '',
-    commission: ''
+    commission: '10',
+    marketingTitle: '',
+    marketingDescription: '',
+    description: ''
   })
-  const [categories, setCategories] = useState([])
+  const [uploadedImages, setUploadedImages] = useState<File[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [dragActive, setDragActive] = useState(false)
 
-  // Fetch categories from API
+  // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -42,11 +63,11 @@ export default function MarketerAddProduct() {
       }
     }
 
-    // Check if session exists and has data
-    if (session && session.data && session.data.user) {
+    // Only fetch if user is authenticated
+    if (status === 'authenticated' && session?.user?.id) {
       fetchCategories()
     }
-  }, [session])
+  }, [status, session?.user?.id])
 
   const handleImageUpload = useCallback((files: FileList | null) => {
     if (!files) return
@@ -95,12 +116,17 @@ export default function MarketerAddProduct() {
     setSuccess('')
 
     console.log('Form data:', formData)
-    console.log('Session:', session)
-    console.log('Session data:', session?.data)
-    console.log('Session user:', session?.data?.user)
+    console.log('Session status:', status)
+    console.log('Session user:', session?.user)
 
     if (!formData.productName || !formData.price || !formData.quantity || !formData.categoryId) {
       setError('الرجاء ملء جميع الحقول المطلوبة (اسم المنتج، الفئة، السعر، والكمية)')
+      setLoading(false)
+      return
+    }
+
+    if (!session?.user?.id) {
+      setError('يجب تسجيل الدخول أولاً')
       setLoading(false)
       return
     }
@@ -111,53 +137,57 @@ export default function MarketerAddProduct() {
       productFormData.append('categoryId', formData.categoryId)
       productFormData.append('price', formData.price)
       productFormData.append('quantity', formData.quantity)
-      productFormData.append('productDescription', formData.productDescription)
       productFormData.append('commission', formData.commission)
-      productFormData.append('marketerId', session?.data?.user?.id || '')
+      productFormData.append('marketingTitle', formData.marketingTitle)
+      productFormData.append('marketingDescription', formData.marketingDescription)
+      productFormData.append('description', formData.description)
+      productFormData.append('marketerId', session.user.id)
 
-      uploadedImages.forEach((image) => {
-        productFormData.append(`images`, image)
+      uploadedImages.forEach((image, index) => {
+        productFormData.append(`image${index}`, image)
       })
 
-      console.log('Sending request to API...')
-      
+      console.log('Submitting to API...')
       const res = await fetch('/api/marketer/products', {
         method: 'POST',
-        body: productFormData,
+        body: productFormData
       })
 
-      console.log('API Response status:', res.status)
-      
-      const data = await res.json()
-      console.log('API Response data:', data)
+      console.log('API response status:', res.status)
 
       if (res.ok) {
+        const data = await res.json()
+        console.log('Product created:', data)
         setSuccess('تم إضافة المنتج بنجاح!')
         setFormData({
           productName: '',
           categoryId: '',
           price: '',
           quantity: '',
-          productDescription: '',
-          commission: ''
+          commission: '10',
+          marketingTitle: '',
+          marketingDescription: '',
+          description: ''
         })
         setUploadedImages([])
-        
         setTimeout(() => {
           router.push('/dashboard/products')
         }, 2000)
       } else {
-        setError(data.error || 'فشل في إضافة المنتج')
+        const errorData = await res.json()
+        console.error('API error:', errorData)
+        setError(errorData.message || 'فشل في إضافة المنتج')
       }
     } catch (error) {
-      console.error('Error adding product:', error)
-      setError('حدث خطأ أثناء إضافة المنتج: ' + (error instanceof Error ? error.message : 'Unknown error'))
+      console.error('Submit error:', error)
+      setError('حدث خطأ ما. الرجاء المحاولة مرة أخرى.')
     } finally {
       setLoading(false)
     }
   }
 
-  if (!session || session.status === 'loading') {
+  // Show loading state
+  if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 flex items-center justify-center">
         <div className="text-white text-2xl">جاري التحميل...</div>
@@ -165,9 +195,8 @@ export default function MarketerAddProduct() {
     )
   }
 
-  // Check if session has data and user
-  if (!session.data || !session.data.user || !session.data.user.id) {
-    console.log('Session invalid:', session)
+  // Show unauthenticated state
+  if (status === 'unauthenticated' || !session?.user?.id) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 flex items-center justify-center">
         <div className="text-white text-2xl">يجب تسجيل الدخول أولاً</div>
@@ -179,265 +208,249 @@ export default function MarketerAddProduct() {
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="p-2 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition-all duration-300"
-            >
-              <ArrowLeft className="w-5 h-5 text-white" />
-            </button>
-            <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-blue-500">
-              إضافة منتج جديد
-            </h1>
-          </div>
+        <div className="mb-8">
           <button
-            onClick={() => router.push('/dashboard')}
-            className="px-6 py-3 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-all duration-300"
+            onClick={() => router.back()}
+            className="flex items-center text-white/80 hover:text-white mb-4 transition-colors"
           >
-            العودة للوحة التحكم
+            <ArrowRight className="ml-2 h-4 w-4" />
+            العودة
           </button>
+          <h1 className="text-4xl font-bold text-white mb-2">إضافة منتج جديد</h1>
+          <p className="text-white/80">أضف منتجاً جديداً إلى متجرك</p>
         </div>
 
         {/* Messages */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200">
+            {error}
+          </div>
+        )}
         {success && (
-          <div className="bg-green-500/20 border border-green-500 text-green-300 px-4 py-3 rounded-lg mb-6 animate-pulse">
+          <div className="mb-6 p-4 bg-green-500/20 border border-green-500/50 rounded-lg text-green-200">
             {success}
           </div>
         )}
 
-        {error && (
-          <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg mb-6 animate-pulse">
-            {error}
-          </div>
-        )}
-
-        {/* Main Form */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-6 md:p-8 border border-pink-500/30 shadow-2xl">
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Product Name Section */}
-            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-              <div className="flex items-center gap-3 mb-4">
-                <Package className="w-5 h-5 text-pink-400" />
-                <h2 className="text-xl font-semibold text-white">اسم المنتج</h2>
-              </div>
-              <div className="flex gap-3">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Basic Information */}
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+            <h2 className="text-xl font-semibold text-white mb-6 flex items-center">
+              <Package className="ml-2 h-5 w-5" />
+              المعلومات الأساسية
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-white/80 mb-2">اسم المنتج *</label>
                 <input
                   type="text"
-                  required
                   value={formData.productName}
-                  onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
-                  className="flex-1 px-4 py-3 bg-white/10 border border-pink-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all"
-                  placeholder="أدخل اسم المنتج..."
+                  onChange={(e) => setFormData(prev => ({ ...prev, productName: e.target.value }))}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-white/40"
+                  placeholder="أدخل اسم المنتج"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-white/80 mb-2">الفئة *</label>
+                <select
+                  value={formData.categoryId}
+                  onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-white/40"
+                  required
+                >
+                  <option value="">اختر الفئة</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-white/80 mb-2">السعر *</label>
+                <div className="relative">
+                  <DollarSign className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
+                  <input
+                    type="number"
+                    value={formData.price}
+                    onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                    className="w-full px-4 py-2 pr-10 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-white/40"
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-white/80 mb-2">الكمية *</label>
+                <div className="relative">
+                  <Box className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
+                  <input
+                    type="number"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
+                    className="w-full px-4 py-2 pr-10 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-white/40"
+                    placeholder="0"
+                    min="0"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Marketing Information */}
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+            <h2 className="text-xl font-semibold text-white mb-6 flex items-center">
+              <Tag className="ml-2 h-5 w-5" />
+              المعلومات التسويقية
+            </h2>
+            
+            <div className="space-y-6">
+              <div>
+                <label className="block text-white/80 mb-2">العنوان التسويقي</label>
+                <input
+                  type="text"
+                  value={formData.marketingTitle}
+                  onChange={(e) => setFormData(prev => ({ ...prev, marketingTitle: e.target.value }))}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-white/40"
+                  placeholder="عنوان جذاب للمنتج"
                 />
                 <button
                   type="button"
-                  onClick={() => copyToClipboard(formData.productName, 'اسم المنتج')}
-                  className="px-4 py-3 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded-lg hover:bg-blue-500/30 transition-all duration-300 flex items-center gap-2"
+                  onClick={() => copyToClipboard(formData.marketingTitle || formData.productName, 'العنوان التسويقي')}
+                  className="mt-2 px-3 py-1 bg-white/10 hover:bg-white/20 text-white/80 text-sm rounded-lg transition-colors flex items-center"
                 >
-                  <Copy className="w-4 h-4" />
-                  نسخ
+                  <Copy className="ml-1 h-3 w-3" />
+                  نسخ العنوان
                 </button>
               </div>
-            </div>
 
-            {/* Category Section */}
-            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <Tag className="w-5 h-5 text-pink-400" />
-                  <h2 className="text-xl font-semibold text-white">الفئة</h2>
-                </div>
+              <div>
+                <label className="block text-white/80 mb-2">الوصف التسويقي</label>
+                <textarea
+                  value={formData.marketingDescription}
+                  onChange={(e) => setFormData(prev => ({ ...prev, marketingDescription: e.target.value }))}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-white/40 h-24 resize-none"
+                  placeholder="وصف جذاب ومختصر للمنتج"
+                />
                 <button
                   type="button"
-                  onClick={() => alert('إدارة الفئات قيد التطوير')}
-                  className="px-4 py-2 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-lg hover:bg-purple-500/30 transition-all duration-300 flex items-center gap-2"
+                  onClick={() => copyToClipboard(formData.marketingDescription || formData.description, 'الوصف التسويقي')}
+                  className="mt-2 px-3 py-1 bg-white/10 hover:bg-white/20 text-white/80 text-sm rounded-lg transition-colors flex items-center"
                 >
-                  <FolderOpen className="w-4 h-4" />
-                  إدارة الفئات
-                </button>
-              </div>
-              <select
-                required
-                value={formData.categoryId}
-                onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-lg text-white focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all"
-              >
-                <option value="" className="bg-gray-800">اختر الفئة</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id} className="bg-gray-800">
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Price and Quantity Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-                <div className="flex items-center gap-3 mb-4">
-                  <DollarSign className="w-5 h-5 text-pink-400" />
-                  <h2 className="text-xl font-semibold text-white">السعر (دج)</h2>
-                </div>
-                <input
-                  type="number"
-                  required
-                  min="0"
-                  step="0.01"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all"
-                  placeholder="0.00"
-                />
-              </div>
-
-              <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-                <div className="flex items-center gap-3 mb-4">
-                  <Box className="w-5 h-5 text-pink-400" />
-                  <h2 className="text-xl font-semibold text-white">الكمية</h2>
-                </div>
-                <input
-                  type="number"
-                  required
-                  min="0"
-                  value={formData.quantity}
-                  onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all"
-                  placeholder="0"
-                />
-              </div>
-            </div>
-
-            {/* Commission Section */}
-            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-              <div className="flex items-center gap-3 mb-4">
-                <Percent className="w-5 h-5 text-pink-400" />
-                <h2 className="text-xl font-semibold text-white">عمولتك (%)</h2>
-              </div>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                step="0.1"
-                value={formData.commission}
-                onChange={(e) => setFormData({ ...formData, commission: e.target.value })}
-                className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all"
-                placeholder="10.0"
-              />
-            </div>
-
-            {/* Description Section */}
-            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-pink-400" />
-                  <h2 className="text-xl font-semibold text-white">وصف المنتج</h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(formData.productDescription, 'وصف المنتج')}
-                  className="px-4 py-2 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded-lg hover:bg-blue-500/30 transition-all duration-300 flex items-center gap-2"
-                >
-                  <Copy className="w-4 h-4" />
+                  <Copy className="ml-1 h-3 w-3" />
                   نسخ الوصف
                 </button>
               </div>
-              <textarea
-                rows={6}
-                value={formData.productDescription}
-                onChange={(e) => setFormData({ ...formData, productDescription: e.target.value })}
-                className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all resize-none"
-                placeholder="أدخل وصفاً مفصلاً للمنتج..."
-              />
-            </div>
 
-            {/* Image Upload Section */}
-            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-              <div className="flex items-center gap-3 mb-4">
-                <Upload className="w-5 h-5 text-pink-400" />
-                <h2 className="text-xl font-semibold text-white">صور المنتج</h2>
-              </div>
-              
-              <div
-                className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${
-                  dragActive 
-                    ? 'border-pink-500 bg-pink-500/10' 
-                    : 'border-pink-500/30 hover:border-pink-500/50'
-                }`}
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-              >
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={(e) => handleImageUpload(e.target.files)}
-                  className="hidden"
-                  id="image-upload"
+              <div>
+                <label className="block text-white/80 mb-2">الوصف الكامل</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-white/40 h-32 resize-none"
+                  placeholder="الوصف التفصيلي للمنتج"
                 />
-                <label
-                  htmlFor="image-upload"
-                  className="cursor-pointer inline-flex flex-col items-center gap-3"
-                >
-                  <Upload className="w-12 h-12 text-pink-400" />
-                  <span className="text-white font-medium">اختر الصور أو اسحبها هنا</span>
-                  <span className="text-gray-400 text-sm">PNG, JPG, GIF حتى 10MB لكل صورة</span>
-                  <span className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors">
-                    اختيار الصور
-                  </span>
-                </label>
               </div>
 
-              {/* Uploaded Images Preview */}
-              {uploadedImages.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-white font-medium mb-4">الصور المرفوعة ({uploadedImages.length})</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                    {uploadedImages.map((image, index) => (
-                      <div key={index} className="relative group">
-                        <div className="aspect-square rounded-lg overflow-hidden border border-pink-500/30">
-                          <img
-                            src={URL.createObjectURL(image)}
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-600"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                        <p className="text-xs text-gray-400 mt-2 truncate">{image.name}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div>
+                <label className="block text-white/80 mb-2">عمولة المسوق (%)</label>
+                <input
+                  type="number"
+                  value={formData.commission}
+                  onChange={(e) => setFormData(prev => ({ ...prev, commission: e.target.value }))}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-white/40"
+                  placeholder="10"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Images */}
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+            <h2 className="text-xl font-semibold text-white mb-6 flex items-center">
+              <ImageIcon className="ml-2 h-5 w-5" />
+              الصور
+            </h2>
+            
+            <div
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                dragActive ? 'border-white/60 bg-white/5' : 'border-white/40 hover:border-white/60'
+              }`}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+            >
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e.target.files)}
+                className="hidden"
+                id="image-upload"
+              />
+              <label htmlFor="image-upload" className="cursor-pointer">
+                <Upload className="h-12 w-12 text-white/60 mx-auto mb-4" />
+                <p className="text-white/80 mb-2">اسحب وأفلت الصور هنا أو انقر للاختيار</p>
+                <p className="text-white/60 text-sm">PNG, JPG, GIF حتى 10MB للصورة الواحدة</p>
+              </label>
             </div>
 
-            {/* Submit Buttons */}
-            <div className="flex flex-col md:flex-row gap-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 py-4 bg-gradient-to-r from-pink-500 to-blue-500 text-white font-bold rounded-lg hover:from-pink-600 hover:to-blue-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
-              >
-                {loading ? 'جاري الإضافة...' : 'إضافة المنتج'}
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push('/dashboard')}
-                className="px-8 py-4 bg-gray-600 text-white font-bold rounded-lg hover:bg-gray-700 transition-all duration-300 text-lg"
-              >
-                إلغاء
-              </button>
-            </div>
-          </form>
-        </div>
+            {uploadedImages.length > 0 && (
+              <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                {uploadedImages.map((image, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={URL.createObjectURL(image)}
+                      alt={`Uploaded ${index + 1}`}
+                      className="w-full h-24 object-cover rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Submit Button */}
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white ml-2"></div>
+                  جاري الإضافة...
+                </>
+              ) : (
+                <>
+                  <Plus className="ml-2 h-4 w-4" />
+                  إضافة المنتج
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )
