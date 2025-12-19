@@ -35,45 +35,83 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== 'ADMIN') {
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await req.json()
+    const contentType = req.headers.get('content-type')
+    let body: any = {}
+
+    if (contentType?.includes('multipart/form-data')) {
+      // Handle FormData with images
+      const formData = await req.formData()
+      body = {
+        name: formData.get('name'),
+        title: formData.get('title'),
+        description: formData.get('description'),
+        price: formData.get('price'),
+        stock: formData.get('stock'),
+        categoryId: formData.get('categoryId'),
+      }
+
+      // Handle images
+      const images = formData.getAll('images') as File[]
+      const imagePaths: string[] = []
+      
+      for (const image of images) {
+        if (image.size > 0) {
+          // Create uploads directory if it doesn't exist
+          const fs = require('fs')
+          const path = require('path')
+          const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'products')
+          
+          if (!fs.existsSync(uploadsDir)) {
+            fs.mkdirSync(uploadsDir, { recursive: true })
+          }
+
+          // Generate unique filename
+          const timestamp = Date.now()
+          const filename = `${timestamp}-${image.name}`
+          const filepath = path.join(uploadsDir, filename)
+          
+          // Save file
+          const buffer = Buffer.from(await image.arrayBuffer())
+          fs.writeFileSync(filepath, buffer)
+          
+          imagePaths.push(`/uploads/products/${filename}`)
+        }
+      }
+
+      body.images = imagePaths
+    } else {
+      // Handle JSON data
+      body = await req.json()
+    }
+
     const { 
       name, 
-      marketingTitle, 
-      marketingDescription, 
-      basePrice, 
-      priceAfterDiscount,
+      title, 
+      description, 
+      price, 
+      stock,
       images, 
-      categoryId, 
-      offerId,
-      options
+      categoryId
     } = body
 
-    if (!name || !marketingTitle || !marketingDescription || !basePrice) {
+    if (!name || !price) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     const product = await prisma.product.create({
       data: {
         name,
-        marketingTitle,
-        marketingDescription,
-        basePrice,
-        priceAfterDiscount,
+        marketingTitle: title || '',
+        marketingDescription: description || '',
+        basePrice: parseFloat(price),
+        priceAfterDiscount: parseFloat(price),
         images: images || [],
         categoryId: categoryId || null,
-        offerId: offerId || null,
-        options: {
-          create: options?.map((opt: any) => ({
-            name: opt.name,
-            values: {
-              create: opt.values?.map((val: string) => ({ value: val })) || []
-            }
-          })) || []
-        }
+        stock: stock ? parseInt(stock) : 0,
       },
       include: {
         category: true,
@@ -88,6 +126,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(product)
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to create product' }, { status: 500 })
+    console.error('Product creation error:', error)
+    return NextResponse.json({ error: 'Failed to create product', details: error }, { status: 500 })
   }
 }

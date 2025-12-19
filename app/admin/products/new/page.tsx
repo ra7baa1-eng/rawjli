@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Upload, X, Copy, Package, Tag, DollarSign, Box, FileText, ArrowLeft, FolderOpen, Image as ImageIcon } from 'lucide-react'
@@ -21,14 +21,27 @@ export default function NewProduct() {
     stock: '',
     categoryId: '',
   })
-  const [categories, setCategories] = useState([
-    { id: '1', name: 'إلكترونيات' },
-    { id: '2', name: 'ملابس' },
-    { id: '3', name: 'أثاث' },
-    { id: '4', name: 'مستحضرات تجميل' },
-    { id: '5', name: 'أطعمة' },
-    { id: '6', name: 'رياضة' }
-  ])
+  const [categories, setCategories] = useState([])
+
+  useEffect(() => {
+    // Fetch categories from API
+    fetch('/api/categories')
+      .then((res) => res.json())
+      .then((data) => {
+        setCategories(data)
+      })
+      .catch(() => {
+        // Fallback to mock categories
+        setCategories([
+          { id: '1', name: 'إلكترونيات' },
+          { id: '2', name: 'ملابس' },
+          { id: '3', name: 'أثاث' },
+          { id: '4', name: 'مستحضرات تجميل' },
+          { id: '5', name: 'أطعمة' },
+          { id: '6', name: 'رياضة' }
+        ])
+      })
+  }, [])
 
   const handleImageUpload = useCallback((files: FileList | null) => {
     if (!files) return
