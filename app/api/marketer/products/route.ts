@@ -54,8 +54,8 @@ export async function POST(req: NextRequest) {
     }
     
     // Validate required fields
-    if (!productName || !price || !categoryId) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    if (!productName || !price || !categoryId || !quantity) {
+      return NextResponse.json({ error: 'الرجاء ملء جميع الحقول المطلوبة: اسم المنتج، الفئة، السعر، والكمية' }, { status: 400 })
     }
 
     // Validate category exists
@@ -98,10 +98,7 @@ export async function POST(req: NextRequest) {
     })
     
   } catch (error) {
-    console.error('Product creation error:', error)
-    return NextResponse.json(
-      { error: 'فشل في إنشاء المنتج' },
-      { status: 500 }
-    )
+    console.error('Error creating product:', error)
+    return NextResponse.json({ error: 'حدث خطأ في الخادم: ' + (error instanceof Error ? error.message : 'Unknown error') }, { status: 500 })
   }
 }

@@ -37,10 +37,10 @@ export default function MarketerAddProduct() {
       }
     }
 
-    if (session.data) {
+    if (session?.data) {
       fetchCategories()
     }
-  }, [session.data])
+  }, [session?.data])
 
   const handleImageUpload = useCallback((files: FileList | null) => {
     if (!files) return
@@ -88,8 +88,11 @@ export default function MarketerAddProduct() {
     setError('')
     setSuccess('')
 
-    if (!formData.productName || !formData.price || !formData.quantity) {
-      setError('الرجاء ملء الحقول المطلوبة')
+    console.log('Form data:', formData)
+    console.log('Session:', session?.data?.user?.id)
+
+    if (!formData.productName || !formData.price || !formData.quantity || !formData.categoryId) {
+      setError('الرجاء ملء جميع الحقول المطلوبة (اسم المنتج، الفئة، السعر، والكمية)')
       setLoading(false)
       return
     }
@@ -108,10 +111,17 @@ export default function MarketerAddProduct() {
         productFormData.append(`images`, image)
       })
 
+      console.log('Sending request to API...')
+      
       const res = await fetch('/api/marketer/products', {
         method: 'POST',
         body: productFormData,
       })
+
+      console.log('API Response status:', res.status)
+      
+      const data = await res.json()
+      console.log('API Response data:', data)
 
       if (res.ok) {
         setSuccess('تم إضافة المنتج بنجاح!')
@@ -129,10 +139,11 @@ export default function MarketerAddProduct() {
           router.push('/dashboard/products')
         }, 2000)
       } else {
-        setError('فشل في إضافة المنتج')
+        setError(data.error || 'فشل في إضافة المنتج')
       }
     } catch (error) {
-      setError('حدث خطأ أثناء إضافة المنتج')
+      console.error('Error adding product:', error)
+      setError('حدث خطأ أثناء إضافة المنتج: ' + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
       setLoading(false)
     }
@@ -146,7 +157,7 @@ export default function MarketerAddProduct() {
     )
   }
 
-  if (!session.data) {
+  if (!session.data?.user?.id) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 flex items-center justify-center">
         <div className="text-white text-2xl">يجب تسجيل الدخول أولاً</div>
