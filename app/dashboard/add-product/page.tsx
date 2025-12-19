@@ -27,8 +27,8 @@ interface FormData {
 export default function AddProductPage() {
   const router = useRouter()
   const sessionData = useSession()
-  const session = sessionData.data
-  const status = sessionData.status
+  const session = sessionData?.data
+  const status = sessionData?.status
   const [formData, setFormData] = useState<FormData>({
     productName: '',
     categoryId: '',
