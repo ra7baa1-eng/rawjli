@@ -91,6 +91,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    // Handle categoryId - convert empty string to null
+    const productCategoryId = categoryId && categoryId !== '' ? categoryId : null
+
     const product = await prisma.product.create({
       data: {
         name,
@@ -99,7 +102,7 @@ export async function POST(req: NextRequest) {
         basePrice: parseFloat(price),
         priceAfterDiscount: parseFloat(price),
         images: images || [],
-        categoryId: categoryId || null,
+        categoryId: productCategoryId,
         stock: stock ? parseInt(stock) : 0,
       },
       include: {
