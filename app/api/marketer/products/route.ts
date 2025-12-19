@@ -20,12 +20,21 @@ export async function POST(req: NextRequest) {
     const categoryId = formData.get('categoryId')?.toString() || ''
     const price = formData.get('price')?.toString() || ''
     const quantity = formData.get('quantity')?.toString() || ''
-    const productDescription = formData.get('productDescription')?.toString() || ''
+    const description = formData.get('description')?.toString() || ''
+    const marketingTitle = formData.get('marketingTitle')?.toString() || ''
+    const marketingDescription = formData.get('marketingDescription')?.toString() || ''
     const commission = formData.get('commission')?.toString() || ''
     const marketerId = session.user.id
     
     // Handle images
-    const images = formData.getAll('images') as File[]
+    const images: File[] = []
+    let imageIndex = 0
+    while (true) {
+      const image = formData.get(`image${imageIndex}`) as File
+      if (!image) break
+      images.push(image)
+      imageIndex++
+    }
     const imageUrls: string[] = []
     
     // Create uploads directory if it doesn't exist
@@ -71,8 +80,8 @@ export async function POST(req: NextRequest) {
     const product = await prisma.product.create({
       data: {
         name: productName,
-        marketingTitle: productName,
-        marketingDescription: productDescription,
+        marketingTitle: marketingTitle,
+        marketingDescription: marketingDescription,
         basePrice: parseFloat(price),
         priceAfterDiscount: parseFloat(price),
         stock: parseInt(quantity),
