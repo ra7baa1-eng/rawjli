@@ -154,7 +154,7 @@ export default function MarketerAddProduct() {
     }
   }
 
-  if (!session) {
+  if (!session || session.status === 'loading') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 flex items-center justify-center">
         <div className="text-white text-2xl">جاري التحميل...</div>
@@ -162,15 +162,9 @@ export default function MarketerAddProduct() {
     )
   }
 
-  if (session.status === 'loading') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 flex items-center justify-center">
-        <div className="text-white text-2xl">جاري التحميل...</div>
-      </div>
-    )
-  }
-
-  if (!session.data?.user?.id) {
+  // Check if session has data and user
+  if (!session.data || !session.data.user || !session.data.user.id) {
+    console.log('Session invalid:', session)
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 flex items-center justify-center">
         <div className="text-white text-2xl">يجب تسجيل الدخول أولاً</div>
