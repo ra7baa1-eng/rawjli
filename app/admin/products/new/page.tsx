@@ -129,9 +129,11 @@ export default function NewProduct() {
           router.push('/admin/products')
         }, 2000)
       } else {
-        setError('فشل في إضافة المنتج')
+        const errorData = await res.json()
+        setError(errorData.error || 'فشل في إضافة المنتج')
       }
     } catch (error) {
+      console.error('Frontend error:', error)
       setError('حدث خطأ أثناء إضافة المنتج')
     } finally {
       setLoading(false)
@@ -236,7 +238,6 @@ export default function NewProduct() {
                 </button>
               </div>
               <select
-                required
                 value={formData.categoryId}
                 onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                 className="w-full px-4 py-3 bg-white/10 border border-gray-500/30 rounded-lg text-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
