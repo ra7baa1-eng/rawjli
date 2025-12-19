@@ -85,15 +85,25 @@ export default function NewProduct() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
-    setError('')
-    setSuccess('')
+    if (!session.data) {
+      setError('يجب تسجيل الدخول لإضافة منتج')
+      return
+    }
+
+    // Validate marketing description length
+    if (formData.description && formData.description.length > 10000) {
+      setError('الوصف التسويقي طويل جداً. الحد الأقصى هو 10000 حرف.')
+      return
+    }
 
     if (!formData.name || !formData.price || !formData.stock) {
       setError('الرجاء ملء الحقول المطلوبة')
-      setLoading(false)
       return
     }
+
+    setLoading(true)
+    setError('')
+    setSuccess('')
 
     try {
       const productFormData = new FormData()
@@ -303,13 +313,18 @@ export default function NewProduct() {
                   نسخ الوصف
                 </button>
               </div>
-              <textarea
-                rows={6}
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-4 py-3 bg-white/10 border border-gray-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all resize-none"
-                placeholder="أدخل وصفاً تسويقياً مفصلاً..."
-              />
+              <div className="relative">
+                <textarea
+                  rows={6}
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-4 py-3 bg-white/10 border border-gray-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all resize-none"
+                  placeholder="أدخل وصفاً تسويقياً مفصلاً..."
+                />
+                <div className="absolute bottom-2 left-2 text-xs text-gray-400">
+                  {formData.description.length}/10000 حرف
+                </div>
+              </div>
             </div>
 
             {/* Image Upload Section */}

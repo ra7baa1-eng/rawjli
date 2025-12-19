@@ -57,8 +57,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         basePrice,
         priceAfterDiscount,
         images,
-        categoryId: categoryId || null,
-        offerId: offerId || null,
+        category: categoryId ? {
+          connect: { id: categoryId }
+        } : categoryId === null ? { disconnect: true } : undefined,
+        offer: offerId ? {
+          connect: { id: offerId }
+        } : offerId === null ? { disconnect: true } : undefined,
         isActive
       },
       include: {

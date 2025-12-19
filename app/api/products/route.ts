@@ -92,19 +92,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    // Validate marketing description length
+    if (description && description.length > 10000) {
+      return new Response(
+        JSON.stringify({ error: 'الوصف التسويقي طويل جداً. الحد الأقصى هو 10000 حرف.' }),
+        { status: 400 }
+      );
+    }
+
     // Handle categoryId - validate it exists if provided
     let productCategoryId = null
     if (categoryId && categoryId !== '') {
-      // Verify the category exists
-      const category = await prisma.category.findUnique({
-        where: { id: categoryId }
-      })
-      
-      if (!category) {
-        return NextResponse.json({ error: 'Invalid category ID' }, { status: 400 })
+      try {
+        const category = await prisma.category.findUnique({
+          where: { id: categoryId }
+        })
+        
+        if (!category) {
+          return new Response(
+            JSON.stringify({ error: 'الفئة المحددة غير موجودة' }),
+            { status: 400 }
+          );
+        }
+        
+        productCategoryId = categoryId
+      } catch (error) {
+        console.error('Error validating category:', error)
+        return new Response(
+          JSON.stringify({ error: 'حدث خطأ أثناء التحقق من الفئة' }),
+          { status: 500 }
+        );
       }
-      
-      productCategoryId = categoryId
     }
 
     try {
@@ -116,7 +134,9 @@ export async function POST(req: NextRequest) {
           basePrice: parseFloat(price),
           priceAfterDiscount: parseFloat(price),
           images: images || [],
-          categoryId: productCategoryId,
+          category: productCategoryId ? {
+            connect: { id: productCategoryId }
+          } : undefined,
           stock: stock ? parseInt(stock) : 0,
         },
         include: {

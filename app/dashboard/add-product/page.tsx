@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Upload, X, Copy, Package, Tag, DollarSign, Box, FileText, Percent, ArrowLeft, FolderOpen } from 'lucide-react'
@@ -21,14 +21,26 @@ export default function MarketerAddProduct() {
     productDescription: '',
     commission: ''
   })
-  const [categories, setCategories] = useState([
-    { id: '1', name: 'إلكترونيات' },
-    { id: '2', name: 'ملابس' },
-    { id: '3', name: 'أثاث' },
-    { id: '4', name: 'مستحضرات تجميل' },
-    { id: '5', name: 'أطعمة' },
-    { id: '6', name: 'رياضة' }
-  ])
+  const [categories, setCategories] = useState([])
+
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch('/api/categories')
+        if (res.ok) {
+          const data = await res.json()
+          setCategories(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch categories:', error)
+      }
+    }
+
+    if (session.data) {
+      fetchCategories()
+    }
+  }, [session.data])
 
   const handleImageUpload = useCallback((files: FileList | null) => {
     if (!files) return

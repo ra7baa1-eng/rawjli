@@ -56,6 +56,7 @@ model User {
   withdrawals       Withdrawal[]
   referrals         Referral[]   @relation("ReferrerReferrals")
   referredBy        Referral?    @relation("ReferredUserReferral")
+  products          Product[]
 }
 
 model Category {
@@ -87,6 +88,7 @@ model Product {
   basePrice           Float
   priceAfterDiscount  Float?
   images              String[]
+  stock               Int                 @default(0)
   isActive            Boolean             @default(true)
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
@@ -96,6 +98,10 @@ model Product {
   
   offerId             String?
   offer               Offer?              @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  
+  marketerId          String?
+  marketer            User?               @relation(fields: [marketerId], references: [id], onDelete: SetNull)
+  commission          Float?              @default(10)
   
   options             ProductOption[]
   orderItems          OrderItem[]

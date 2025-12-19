@@ -2,9 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
+import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const formData = await req.formData()
     
     // Extract form fields
@@ -14,7 +22,7 @@ export async function POST(req: NextRequest) {
     const quantity = formData.get('quantity')?.toString() || ''
     const productDescription = formData.get('productDescription')?.toString() || ''
     const commission = formData.get('commission')?.toString() || ''
-    const marketerId = formData.get('marketerId')?.toString() || ''
+    const marketerId = session.user.id
     
     // Handle images
     const images = formData.getAll('images') as File[]
@@ -45,24 +53,45 @@ export async function POST(req: NextRequest) {
       }
     }
     
-    // Create product data (in a real app, save to database)
-    const product = {
-      id: `product-${Date.now()}`,
-      name: productName,
-      categoryId,
-      marketerId,
-      basePrice: parseFloat(price),
-      priceAfterDiscount: parseFloat(price),
-      stock: parseInt(quantity),
-      description: productDescription,
-      images: imageUrls,
-      commission: commission ? parseFloat(commission) : 10,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+    // Validate required fields
+    if (!productName || !price || !categoryId) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
+
+    // Validate category exists
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId }
+    })
     
-    // For now, just return success (in production, save to database)
+    if (!category) {
+      return NextResponse.json({ error: 'الفئة المحددة غير موجودة' }, { status: 400 })
+    }
+
+    // Create product in database
+    const product = await prisma.product.create({
+      data: {
+        name: productName,
+        marketingTitle: productName,
+        marketingDescription: productDescription,
+        basePrice: parseFloat(price),
+        priceAfterDiscount: parseFloat(price),
+        stock: parseInt(quantity),
+        category: {
+          connect: { id: categoryId }
+        },
+        images: imageUrls,
+        marketer: {
+          connect: { id: marketerId }
+        },
+        commission: commission ? parseFloat(commission) : 10,
+        isActive: true
+      },
+      include: {
+        category: true,
+        marketer: true
+      }
+    })
+    
     return NextResponse.json({
       message: 'تم إضافة المنتج بنجاح!',
       product
