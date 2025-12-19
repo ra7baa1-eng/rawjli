@@ -60,25 +60,14 @@ export async function POST(req: NextRequest) {
       
       for (const image of images) {
         if (image.size > 0) {
-          // Create uploads directory if it doesn't exist
-          const fs = require('fs')
-          const path = require('path')
-          const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'products')
+          // For Vercel, we'll use base64 encoding instead of file system
+          const bytes = await image.arrayBuffer()
+          const buffer = Buffer.from(bytes)
+          const base64 = buffer.toString('base64')
+          const mimeType = image.type
+          const dataUrl = `data:${mimeType};base64,${base64}`
           
-          if (!fs.existsSync(uploadsDir)) {
-            fs.mkdirSync(uploadsDir, { recursive: true })
-          }
-
-          // Generate unique filename
-          const timestamp = Date.now()
-          const filename = `${timestamp}-${image.name}`
-          const filepath = path.join(uploadsDir, filename)
-          
-          // Save file
-          const buffer = Buffer.from(await image.arrayBuffer())
-          fs.writeFileSync(filepath, buffer)
-          
-          imagePaths.push(`/uploads/products/${filename}`)
+          imagePaths.push(dataUrl)
         }
       }
 
