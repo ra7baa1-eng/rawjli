@@ -42,10 +42,11 @@ export default function MarketerAddProduct() {
       }
     }
 
-    if (session?.data) {
+    // Check if session exists and has data
+    if (session && session.data && session.data.user) {
       fetchCategories()
     }
-  }, [session?.data])
+  }, [session])
 
   const handleImageUpload = useCallback((files: FileList | null) => {
     if (!files) return
