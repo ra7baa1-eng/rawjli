@@ -27,20 +27,25 @@ export default function MarketerAddProduct() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
+        console.log('Fetching categories...')
         const res = await fetch('/api/categories')
+        console.log('Categories response status:', res.status)
         if (res.ok) {
           const data = await res.json()
+          console.log('Categories data:', data)
           setCategories(data)
+        } else {
+          console.error('Failed to fetch categories:', res.status)
         }
       } catch (error) {
         console.error('Failed to fetch categories:', error)
       }
     }
 
-    if (session?.data) {
+    if (session && session.data) {
       fetchCategories()
     }
-  }, [session?.data])
+  }, [session])
 
   const handleImageUpload = useCallback((files: FileList | null) => {
     if (!files) return
@@ -149,7 +154,15 @@ export default function MarketerAddProduct() {
     }
   }
 
-  if (!session || session.status === 'loading') {
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 flex items-center justify-center">
+        <div className="text-white text-2xl">جاري التحميل...</div>
+      </div>
+    )
+  }
+
+  if (session.status === 'loading') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 flex items-center justify-center">
         <div className="text-white text-2xl">جاري التحميل...</div>
