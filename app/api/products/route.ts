@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 export async function GET(req: NextRequest) {
   try {
@@ -91,32 +92,70 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Handle categoryId - convert empty string to null
-    const productCategoryId = categoryId && categoryId !== '' ? categoryId : null
+    // Handle categoryId - validate it exists if provided
+    let productCategoryId = null
+    if (categoryId && categoryId !== '') {
+      // Verify the category exists
+      const category = await prisma.category.findUnique({
+        where: { id: categoryId }
+      })
+      
+      if (!category) {
+        return NextResponse.json({ error: 'Invalid category ID' }, { status: 400 })
+      }
+      
+      productCategoryId = categoryId
+    }
 
-    const product = await prisma.product.create({
-      data: {
-        name,
-        marketingTitle: title || '',
-        marketingDescription: description || '',
-        basePrice: parseFloat(price),
-        priceAfterDiscount: parseFloat(price),
-        images: images || [],
-        categoryId: productCategoryId,
-        stock: stock ? parseInt(stock) : 0,
-      },
-      include: {
-        category: true,
-        offer: true,
-        options: {
-          include: {
-            values: true
+    try {
+      const product = await prisma.product.create({
+        data: {
+          name,
+          marketingTitle: title || '',
+          marketingDescription: description || '',
+          basePrice: parseFloat(price),
+          priceAfterDiscount: parseFloat(price),
+          images: images || [],
+          categoryId: productCategoryId,
+          stock: stock ? parseInt(stock) : 0,
+        },
+        include: {
+          category: true,
+          offer: true,
+          options: {
+            include: {
+              values: true
+            }
           }
         }
-      }
-    })
+      })
 
-    return NextResponse.json(product)
+      return NextResponse.json(product, { status: 201 })
+    } catch (error) {
+      console.error('Error creating product:', error)
+      console.error('Product data:', {
+        name,
+        title,
+        description,
+        price,
+        stock,
+        imagesCount: images?.length || 0,
+        categoryId: productCategoryId
+      })
+      
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        return NextResponse.json({ 
+          error: 'Database error', 
+          details: error.message,
+          code: error.code
+        }, { status: 400 })
+      }
+      
+      return NextResponse.json({ 
+        error: 'Failed to create product',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }, { status: 500 })
+    }
   } catch (error) {
     console.error('Product creation error:', error)
     return NextResponse.json({ error: 'Failed to create product', details: error }, { status: 500 })
