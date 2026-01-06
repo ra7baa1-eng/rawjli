@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Upload, X, Copy, Plus, ArrowRight, Package, Tag, DollarSign, Box, FileText, Image as ImageIcon } from 'lucide-react'
+import { Upload, X, Copy, Plus, ArrowRight, Package, Tag, DollarSign, FileText, Image as ImageIcon } from 'lucide-react'
 
 interface Category {
   id: string
@@ -29,6 +29,11 @@ export default function AddProductPage() {
   const sessionData = useSession()
   const session = sessionData?.data
   const status = sessionData?.status
+  
+  // Add error boundary state
+  const [hasError, setHasError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+  
   const [formData, setFormData] = useState<FormData>({
     productName: '',
     categoryId: '',
@@ -43,6 +48,42 @@ export default function AddProductPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [dragActive, setDragActive] = useState(false)
+
+  // Error boundary
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error('Global error caught:', event.error)
+      setErrorMessage(event.error?.message || 'Unknown error occurred')
+      setHasError(true)
+    }
+
+    window.addEventListener('error', handleError)
+    return () => window.removeEventListener('error', handleError)
+  }, [])
+
+  // Reset error state
+  const resetError = () => {
+    setHasError(false)
+    setErrorMessage('')
+  }
+
+  // Show error boundary
+  if (hasError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-900 via-pink-900 to-purple-900 flex items-center justify-center p-4">
+        <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 border border-white/20 max-w-md w-full">
+          <h2 className="text-2xl font-bold text-white mb-4">حدث خطأ ما</h2>
+          <p className="text-white/80 mb-6">{errorMessage}</p>
+          <button
+            onClick={resetError}
+            className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   // Fetch categories
   useEffect(() => {
@@ -62,6 +103,8 @@ export default function AddProductPage() {
       } catch (error) {
         console.error('Failed to fetch categories:', error)
         setCategories([])
+        setErrorMessage('فشل في تحميل الفئات')
+        setHasError(true)
       }
     }
 
@@ -72,11 +115,16 @@ export default function AddProductPage() {
   }, [status, session?.user?.id])
 
   const handleImageUpload = useCallback((files: FileList | null) => {
-    if (!files) return
-    const fileArray = Array.from(files).filter(file => 
-      file.type.startsWith('image/') && file.size <= 10 * 1024 * 1024
-    )
-    setUploadedImages(prev => [...prev, ...fileArray])
+    try {
+      if (!files) return
+      const fileArray = Array.from(files).filter(file => 
+        file.type.startsWith('image/') && file.size <= 10 * 1024 * 1024
+      )
+      setUploadedImages(prev => [...prev, ...fileArray])
+    } catch (error) {
+      console.error('Error uploading images:', error)
+      setError('فشل في رفع الصور')
+    }
   }, [])
 
   const removeImage = useCallback((index: number) => {
@@ -112,36 +160,36 @@ export default function AddProductPage() {
   }, [handleImageUpload])
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log('🔥 handleSubmit called!')
-    
-    setLoading(true)
-    setError('')
-    setSuccess('')
-
-    console.log('=== Form Submit Started ===')
-    console.log('Form data:', formData)
-    console.log('Session status:', status)
-    console.log('Session user:', session?.user)
-    console.log('Uploaded images count:', uploadedImages.length)
-
-    if (!formData.productName || !formData.price || !formData.categoryId) {
-      console.log('Validation failed - missing fields')
-      setError('الرجاء ملء جميع الحقول المطلوبة (اسم المنتج، الفئة، والسعر)')
-      setLoading(false)
-      return
-    }
-
-    if (!session || !session.user || !session.user.id) {
-      console.log('Validation failed - no session')
-      setError('يجب تسجيل الدخول أولاً')
-      setLoading(false)
-      return
-    }
-
-    console.log('Validation passed, preparing FormData...')
-
     try {
+      e.preventDefault()
+      console.log('🔥 handleSubmit called!')
+      
+      setLoading(true)
+      setError('')
+      setSuccess('')
+
+      console.log('=== Form Submit Started ===')
+      console.log('Form data:', formData)
+      console.log('Session status:', status)
+      console.log('Session user:', session?.user)
+      console.log('Uploaded images count:', uploadedImages.length)
+
+      if (!formData.productName || !formData.price || !formData.categoryId) {
+        console.log('Validation failed - missing fields')
+        setError('الرجاء ملء جميع الحقول المطلوبة (اسم المنتج، الفئة، والسعر)')
+        setLoading(false)
+        return
+      }
+
+      if (!session || !session.user || !session.user.id) {
+        console.log('Validation failed - no session')
+        setError('يجب تسجيل الدخول أولاً')
+        setLoading(false)
+        return
+      }
+
+      console.log('Validation passed, preparing FormData...')
+
       const productFormData = new FormData()
       productFormData.append('productName', formData.productName)
       productFormData.append('categoryId', formData.categoryId)
@@ -189,6 +237,8 @@ export default function AddProductPage() {
     } catch (error) {
       console.error('💥 Submit error:', error)
       setError('حدث خطأ ما. الرجاء المحاولة مرة أخرى.')
+      setErrorMessage(error instanceof Error ? error.message : 'Unknown error occurred')
+      setHasError(true)
     } finally {
       setLoading(false)
       console.log('=== Form Submit Ended ===')
@@ -213,7 +263,9 @@ export default function AddProductPage() {
     )
   }
 
-  return (
+  // Main component with error boundary
+  try {
+    return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
@@ -430,5 +482,11 @@ export default function AddProductPage() {
         </form>
       </div>
     </div>
-  )
+    )
+  } catch (error) {
+    console.error('Component render error:', error)
+    setErrorMessage(error instanceof Error ? error.message : 'Component render error')
+    setHasError(true)
+    return null
+  }
 }
