@@ -73,14 +73,21 @@ async function main() {
   console.log(`Created ${citiesData.length} communes`)
 
   for (const [code] of wilayasMap) {
-    await prisma.shippingPrice.upsert({
-      where: { wilayaCode: code },
-      update: {},
-      create: {
-        wilayaCode: code,
-        price: 500,
-      },
+    // Find wilaya by code
+    const wilaya = await prisma.wilaya.findUnique({
+      where: { code }
     })
+    
+    if (wilaya) {
+      await prisma.shippingPrice.upsert({
+        where: { wilayaId: wilaya.id },
+        update: {},
+        create: {
+          wilayaId: wilaya.id,
+          price: 500,
+        },
+      })
+    }
   }
 
   console.log('Default shipping prices created')

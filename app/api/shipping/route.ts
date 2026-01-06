@@ -48,10 +48,26 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    // Find Wilaya by code first
+    let wilaya = await prisma.wilaya.findUnique({
+      where: { code: wilayaCode }
+    })
+
+    // If wilaya doesn't exist, create it
+    if (!wilaya) {
+      wilaya = await prisma.wilaya.create({
+        data: {
+          code: wilayaCode,
+          name: wilayaCode // You may want to add a name field to the request
+        }
+      })
+    }
+
+    // Then upsert shipping price using wilayaId
     const shippingPrice = await prisma.shippingPrice.upsert({
-      where: { wilayaCode },
+      where: { wilayaId: wilaya.id },
       update: { price },
-      create: { wilayaCode, price }
+      create: { wilayaId: wilaya.id, price }
     })
 
     return NextResponse.json(shippingPrice)

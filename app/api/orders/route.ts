@@ -75,9 +75,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const shippingPrice = await prisma.shippingPrice.findUnique({
-      where: { wilayaCode }
+    // Find Wilaya by code first
+    const wilaya = await prisma.wilaya.findUnique({
+      where: { code: wilayaCode }
     })
+
+    // Then find shipping price using wilayaId
+    const shippingPrice = wilaya ? await prisma.shippingPrice.findUnique({
+      where: { wilayaId: wilaya.id }
+    }) : null
 
     const shippingCost = shippingPrice?.price || 0
 

@@ -21,7 +21,7 @@ export default function NewProduct() {
     stock: '',
     categoryId: '',
   })
-  const [categories, setCategories] = useState([])
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
 
   useEffect(() => {
     // Fetch categories from API

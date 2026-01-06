@@ -21,7 +21,7 @@ export default function MarketerAddProduct() {
     productDescription: '',
     commission: ''
   })
-  const [categories, setCategories] = useState([])
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
 
   // Fetch categories from API
   useEffect(() => {
