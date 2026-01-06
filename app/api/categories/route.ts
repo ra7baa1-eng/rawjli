@@ -16,7 +16,7 @@ export async function GET() {
 
     // Add retry logic for database connection
     let retries = 3;
-    let categories = [];
+    let categories: any[] = [];
     
     while (retries > 0) {
       try {

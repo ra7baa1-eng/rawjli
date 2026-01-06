@@ -23,32 +23,54 @@ export async function GET(req: NextRequest) {
       where.status = status
     }
 
-    const orders = await prisma.order.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        wilaya: true,
-        commune: true,
-        marketer: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true
-          }
-        },
-        items: {
+    // Add retry logic for database connection
+    let retries = 3;
+    let orders: any[] = [];
+    
+    while (retries > 0) {
+      try {
+        orders = await prisma.order.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
           include: {
-            product: true,
-            bundle: true
+            wilaya: true,
+            commune: true,
+            marketer: {
+              select: {
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true
+              }
+            },
+            items: {
+              include: {
+                product: true,
+                bundle: true
+              }
+            }
           }
-        }
+        });
+        break;
+      } catch (dbError) {
+        console.log(`Database retry attempt: ${4 - retries}`);
+        retries--;
+        if (retries === 0) throw dbError;
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
-    })
+    }
 
-    return NextResponse.json(orders)
+    return NextResponse.json({
+      success: true,
+      data: orders
+    })
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 })
+    console.error('Error fetching orders:', error)
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to fetch orders',
+      data: []
+    }, { status: 500 })
   }
 }
 

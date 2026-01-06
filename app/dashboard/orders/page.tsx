@@ -14,36 +14,19 @@ export default function MarketerOrders() {
 
   const fetchOrders = async () => {
     try {
-      // Mock orders for now since API might not work
-      const mockOrders = [
-        {
-          id: '1',
-          orderNumber: 'ORD-2024-001',
-          customerFirstName: 'أحمد',
-          customerLastName: 'محمد',
-          customerPhone: '0551234567',
-          totalAmount: 2500,
-          commission: 250,
-          status: 'PROCESSING',
-          createdAt: '2024-12-18T20:00:00Z',
-          wilaya: { name: 'الجزائر العاصمة' }
-        },
-        {
-          id: '2',
-          orderNumber: 'ORD-2024-002',
-          customerFirstName: 'فاطمة',
-          customerLastName: 'بن علي',
-          customerPhone: '0779876543',
-          totalAmount: 1500,
-          commission: 150,
-          status: 'SHIPPED',
-          createdAt: '2024-12-17T15:30:00Z',
-          wilaya: { name: 'وهران' }
-        }
-      ]
-      setOrders(mockOrders)
+      const res = await fetch('/api/orders')
+      if (res.ok) {
+        const data = await res.json()
+        // معالجة آمنة للبيانات
+        setOrders(data?.data || data || [])
+      } else {
+        console.error('Failed to fetch orders:', res.status)
+        setOrders([])
+      }
     } catch (error) {
+      console.error('Error fetching orders:', error)
       setError('فشل في جلب الطلبات')
+      setOrders([])
     } finally {
       setLoading(false)
     }
