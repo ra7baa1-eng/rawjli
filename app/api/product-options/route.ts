@@ -14,7 +14,15 @@ export async function GET() {
       );
     }
 
-    const categories = await prisma.category.findMany({
+    // جلب جميع الخيارات من جميع المنتجات مع قيمها
+    const options = await prisma.productOption.findMany({
+      include: {
+        values: {
+          orderBy: {
+            value: 'asc'
+          }
+        }
+      },
       orderBy: {
         name: 'asc'
       }
@@ -23,14 +31,14 @@ export async function GET() {
     // إرجاع البيانات بشكل متسق
     return NextResponse.json({
       success: true,
-      data: categories
+      data: options
     });
   } catch (error) {
-    console.error('Error fetching categories:', error);
+    console.error('Error fetching product options:', error);
     return NextResponse.json(
       { 
         success: false,
-        error: 'حدث خطأ في جلب الفئات',
+        error: 'حدث خطأ في جلب الخيارات',
         data: [] // إرجاع مصفوفة فارغة في حالة الخطأ
       },
       { status: 500 }
@@ -50,34 +58,34 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, description } = body;
+    const { name, values } = body;
 
     if (!name) {
       return NextResponse.json(
-        { error: 'اسم الفئة مطلوب' },
+        { error: 'اسم الخيار مطلوب' },
         { status: 400 }
       );
     }
 
-    const category = await prisma.category.create({
-      data: {
-        name,
-        description: description || null
-      }
-    });
-
-    return NextResponse.json({
-      success: true,
-      data: category
-    });
-  } catch (error) {
-    console.error('Error creating category:', error);
+    // ملاحظة: بما أن ProductOption مرتبط بمنتج في schema، 
+    // يجب إنشاء الخيارات عند إنشاء المنتج أو ربطها بمنتج موجود
+    // هنا نعيد رسالة توضيحية
     return NextResponse.json(
       { 
         success: false,
-        error: 'حدث خطأ في إنشاء الفئة'
+        error: 'يجب إنشاء الخيارات عند إنشاء المنتج أو ربطها بمنتج موجود'
+      },
+      { status: 400 }
+    );
+  } catch (error) {
+    console.error('Error creating product option:', error);
+    return NextResponse.json(
+      { 
+        success: false,
+        error: 'حدث خطأ في إنشاء الخيار'
       },
       { status: 500 }
     );
   }
 }
+

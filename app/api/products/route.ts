@@ -82,10 +82,14 @@ export async function POST(req: NextRequest) {
       name, 
       title, 
       description, 
+      marketingDescription,
       price, 
+      cost,
       stock,
       images, 
-      categoryId
+      image,
+      categoryId,
+      optionIds
     } = body
 
     if (!name || !price) {
@@ -126,14 +130,18 @@ export async function POST(req: NextRequest) {
     }
 
     try {
+      // معالجة الصور - دعم كل من images (مصفوفة) و image (رابط واحد)
+      const productImages = images || (image ? [image] : []);
+
+      // إنشاء المنتج أولاً
       const product = await prisma.product.create({
         data: {
           name,
           marketingTitle: title || '',
-          marketingDescription: description || '',
+          marketingDescription: marketingDescription || description || '',
           basePrice: parseFloat(price),
           priceAfterDiscount: parseFloat(price),
-          images: images || [],
+          images: productImages,
           category: productCategoryId ? {
             connect: { id: productCategoryId }
           } : undefined,
@@ -149,6 +157,50 @@ export async function POST(req: NextRequest) {
           }
         }
       })
+
+      // إنشاء الخيارات المحددة بعد إنشاء المنتج
+      if (optionIds && optionIds.length > 0) {
+        // جلب الخيارات المرجعية (templates) من المنتجات الأخرى
+        const templateOptions = await prisma.productOption.findMany({
+          where: {
+            id: { in: optionIds }
+          },
+          include: {
+            values: true
+          }
+        })
+
+        // إنشاء نسخ من الخيارات للمنتج الجديد
+        for (const templateOption of templateOptions) {
+          await prisma.productOption.create({
+            data: {
+              name: templateOption.name,
+              productId: product.id,
+              values: {
+                create: templateOption.values.map((val) => ({
+                  value: val.value
+                }))
+              }
+            }
+          })
+        }
+
+        // إعادة جلب المنتج مع الخيارات الجديدة
+        const updatedProduct = await prisma.product.findUnique({
+          where: { id: product.id },
+          include: {
+            category: true,
+            offer: true,
+            options: {
+              include: {
+                values: true
+              }
+            }
+          }
+        })
+
+        return NextResponse.json(updatedProduct, { status: 201 })
+      }
 
       return NextResponse.json(product, { status: 201 })
     } catch (error) {
