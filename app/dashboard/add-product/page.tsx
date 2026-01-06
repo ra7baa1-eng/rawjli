@@ -49,7 +49,7 @@ export default function AddProductPage() {
   const [success, setSuccess] = useState('')
   const [dragActive, setDragActive] = useState(false)
 
-  // Error boundary
+  // Error boundary - must be called before any early returns
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {
       console.error('Global error caught:', event.error)
@@ -61,31 +61,13 @@ export default function AddProductPage() {
     return () => window.removeEventListener('error', handleError)
   }, [])
 
-  // Reset error state
-  const resetError = () => {
+  // Reset error state - must be called before any early returns
+  const resetError = useCallback(() => {
     setHasError(false)
     setErrorMessage('')
-  }
+  }, [])
 
-  // Show error boundary
-  if (hasError) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-red-900 via-pink-900 to-purple-900 flex items-center justify-center p-4">
-        <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 border border-white/20 max-w-md w-full">
-          <h2 className="text-2xl font-bold text-white mb-4">حدث خطأ ما</h2>
-          <p className="text-white/80 mb-6">{errorMessage}</p>
-          <button
-            onClick={resetError}
-            className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-          >
-            إعادة المحاولة
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // Fetch categories
+  // Fetch categories - must be called before any early returns
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -112,8 +94,9 @@ export default function AddProductPage() {
     if (status === 'authenticated' && session && session.user && session.user.id) {
       fetchCategories()
     }
-  }, [status, session?.user?.id])
+  }, [status, session?.user?.id, session])
 
+  // All other hooks must be called before any early returns
   const handleImageUpload = useCallback((files: FileList | null) => {
     try {
       if (!files) return
@@ -243,6 +226,24 @@ export default function AddProductPage() {
       setLoading(false)
       console.log('=== Form Submit Ended ===')
     }
+  }
+
+  // Show error boundary - now all hooks are already called
+  if (hasError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-900 via-pink-900 to-purple-900 flex items-center justify-center p-4">
+        <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 border border-white/20 max-w-md w-full">
+          <h2 className="text-2xl font-bold text-white mb-4">حدث خطأ ما</h2>
+          <p className="text-white/80 mb-6">{errorMessage}</p>
+          <button
+            onClick={resetError}
+            className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      </div>
+    )
   }
 
   // Show loading state
