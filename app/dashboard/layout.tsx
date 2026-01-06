@@ -6,9 +6,9 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <div>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900">
       <MarketerNav />
-      <main className="container mx-auto p-6">{children}</main>
+      <main>{children}</main>
     </div>
   )
 }
