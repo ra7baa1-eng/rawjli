@@ -43,16 +43,19 @@ export async function POST(req: NextRequest) {
     const contentType = req.headers.get('content-type')
     let body: any = {}
 
-    if (contentType?.includes('multipart/form-data')) {
-      // Handle FormData with images
+    // إذا كان content-type JSON واضح، اقرأ JSON مباشرة
+    if (contentType?.includes('application/json')) {
+      body = await req.json()
+    } else {
+      // وإلا، افترض أنه FormData (لأن fetch مع FormData قد لا يرسل content-type صحيح)
       const formData = await req.formData()
       body = {
-        name: formData.get('name'),
-        title: formData.get('title'),
-        description: formData.get('description'),
-        price: formData.get('price'),
-        stock: formData.get('stock'),
-        categoryId: formData.get('categoryId'),
+        name: formData.get('name')?.toString() || '',
+        title: formData.get('title')?.toString() || '',
+        description: formData.get('description')?.toString() || '',
+        price: formData.get('price')?.toString() || '',
+        stock: formData.get('stock')?.toString() || '',
+        categoryId: formData.get('categoryId')?.toString() || '',
       }
 
       // Handle images
@@ -60,22 +63,23 @@ export async function POST(req: NextRequest) {
       const imagePaths: string[] = []
       
       for (const image of images) {
-        if (image.size > 0) {
-          // For Vercel, we'll use base64 encoding instead of file system
-          const bytes = await image.arrayBuffer()
-          const buffer = Buffer.from(bytes)
-          const base64 = buffer.toString('base64')
-          const mimeType = image.type
-          const dataUrl = `data:${mimeType};base64,${base64}`
-          
-          imagePaths.push(dataUrl)
+        if (image && image.size > 0) {
+          try {
+            // For Vercel, we'll use base64 encoding instead of file system
+            const bytes = await image.arrayBuffer()
+            const buffer = Buffer.from(bytes)
+            const base64 = buffer.toString('base64')
+            const mimeType = image.type || 'image/jpeg'
+            const dataUrl = `data:${mimeType};base64,${base64}`
+            
+            imagePaths.push(dataUrl)
+          } catch (imgError) {
+            console.error('Error processing image:', imgError)
+          }
         }
       }
 
       body.images = imagePaths
-    } else {
-      // Handle JSON data
-      body = await req.json()
     }
 
     const { 
@@ -92,8 +96,27 @@ export async function POST(req: NextRequest) {
       optionIds
     } = body
 
-    if (!name || !price) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    console.log('Received product data:', { name, price, stock, categoryId, hasImages: !!images })
+
+    // التحقق من الحقول المطلوبة
+    if (!name || !name.toString().trim()) {
+      return NextResponse.json({ error: 'اسم المنتج مطلوب' }, { status: 400 })
+    }
+    
+    if (!price || !price.toString().trim()) {
+      return NextResponse.json({ error: 'السعر مطلوب' }, { status: 400 })
+    }
+    
+    // التحقق من أن السعر رقم صحيح
+    const priceNum = parseFloat(price.toString())
+    if (isNaN(priceNum) || priceNum <= 0) {
+      return NextResponse.json({ error: 'السعر يجب أن يكون رقماً أكبر من صفر' }, { status: 400 })
+    }
+    
+    // التحقق من stock إذا كان مطلوباً
+    const stockNum = stock ? parseInt(stock.toString()) : 0
+    if (stock && isNaN(stockNum)) {
+      return NextResponse.json({ error: 'الكمية يجب أن تكون رقماً صحيحاً' }, { status: 400 })
     }
 
     // Validate marketing description length

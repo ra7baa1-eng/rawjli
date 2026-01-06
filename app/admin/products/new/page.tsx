@@ -87,7 +87,19 @@ export default function NewProduct() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!session.data) {
+    console.log('Form submitted!', { 
+      formData, 
+      sessionStatus: session.status,
+      sessionData: session.data,
+      loading 
+    })
+    
+    if (session.status === 'loading') {
+      setError('جاري التحقق من الجلسة...')
+      return
+    }
+    
+    if (session.status === 'unauthenticated' || !session.data) {
       setError('يجب تسجيل الدخول لإضافة منتج')
       return
     }
@@ -110,22 +122,27 @@ export default function NewProduct() {
     try {
       const productFormData = new FormData()
       productFormData.append('name', formData.name)
-      productFormData.append('title', formData.title)
-      productFormData.append('description', formData.description)
+      productFormData.append('title', formData.title || '')
+      productFormData.append('description', formData.description || '')
       productFormData.append('price', formData.price)
       productFormData.append('stock', formData.stock)
-      productFormData.append('categoryId', formData.categoryId)
+      productFormData.append('categoryId', formData.categoryId || '')
 
       uploadedImages.forEach((image) => {
         productFormData.append(`images`, image)
       })
 
+      console.log('Sending request to /api/products...')
       const res = await fetch('/api/products', {
         method: 'POST',
         body: productFormData,
       })
 
+      console.log('Response status:', res.status, res.statusText)
+
       if (res.ok) {
+        const result = await res.json()
+        console.log('Product created successfully:', result)
         setSuccess('تم إضافة المنتج بنجاح!')
         setFormData({
           name: '',
@@ -141,12 +158,13 @@ export default function NewProduct() {
           router.push('/admin/products')
         }, 2000)
       } else {
-        const errorData = await res.json()
-        setError(errorData.error || 'فشل في إضافة المنتج')
+        const errorData = await res.json().catch(() => ({ error: 'فشل في إضافة المنتج' }))
+        console.error('API error:', errorData)
+        setError(errorData.error || errorData.message || 'فشل في إضافة المنتج')
       }
     } catch (error) {
       console.error('Frontend error:', error)
-      setError('حدث خطأ أثناء إضافة المنتج')
+      setError(error instanceof Error ? error.message : 'حدث خطأ أثناء إضافة المنتج')
     } finally {
       setLoading(false)
     }

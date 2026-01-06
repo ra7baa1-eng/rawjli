@@ -48,7 +48,7 @@ export default function AddProductPage() {
   const [success, setSuccess] = useState('')
   const [dragActive, setDragActive] = useState(false)
 
-  // Fetch categories
+  // Fetch categories - الإصلاح هنا
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -58,12 +58,15 @@ export default function AddProductPage() {
         if (res.ok) {
           const data = await res.json()
           console.log('Categories data:', data)
-          setCategories(data)
+          // الإصلاح: التعامل مع كل أشكال الاستجابة الممكنة
+          setCategories(data?.data || data || [])
         } else {
           console.error('Failed to fetch categories:', res.status)
+          setCategories([])
         }
       } catch (error) {
         console.error('Failed to fetch categories:', error)
+        setCategories([])
       }
     }
 
