@@ -8,12 +8,18 @@ import { authOptions } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
   try {
+    console.log('=== POST /api/marketer/products ===')
+    
     const session = await getServerSession(authOptions)
+    console.log('Session:', session)
+    
     if (!session) {
+      console.log('No session found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const formData = await req.formData()
+    console.log('FormData received')
     
     // Extract form fields
     const productName = formData.get('productName')?.toString()?.trim() || ''
@@ -25,6 +31,8 @@ export async function POST(req: NextRequest) {
     const marketingDescription = formData.get('marketingDescription')?.toString() || ''
     const commission = formData.get('commission')?.toString() || ''
     const marketerId = session.user.id
+    
+    console.log('Form data extracted:', { productName, categoryId, price, quantity, marketerId })
     
     // Handle images
     const images: File[] = []
@@ -64,19 +72,37 @@ export async function POST(req: NextRequest) {
     
     // Validate required fields
     if (!productName || !price || !categoryId || !quantity) {
+      console.log('Validation failed:', { productName: !!productName, price: !!price, categoryId: !!categoryId, quantity: !!quantity })
       return NextResponse.json({ error: 'الرجاء ملء جميع الحقول المطلوبة: اسم المنتج، الفئة، السعر، والكمية' }, { status: 400 })
     }
 
+    console.log('Validation passed, checking category...')
+
     // Validate category exists
+    console.log('Looking for category:', categoryId)
     const category = await prisma.category.findUnique({
       where: { id: categoryId }
     })
     
+    console.log('Category found:', category)
+    
     if (!category) {
+      console.log('Category not found')
       return NextResponse.json({ error: 'الفئة المحددة غير موجودة' }, { status: 400 })
     }
 
+    console.log('Creating product...')
+
     // Create product in database
+    console.log('Creating product with data:', {
+      name: productName,
+      categoryId,
+      price: parseFloat(price),
+      quantity: parseInt(quantity),
+      marketerId,
+      imageUrlsCount: imageUrls.length
+    })
+
     const product = await prisma.product.create({
       data: {
         name: productName,
@@ -100,6 +126,8 @@ export async function POST(req: NextRequest) {
         marketer: true
       }
     })
+    
+    console.log('Product created successfully:', product.id)
     
     return NextResponse.json({
       message: 'تم إضافة المنتج بنجاح!',

@@ -122,21 +122,27 @@ export default function AddProductPage() {
     setError('')
     setSuccess('')
 
+    console.log('=== Form Submit Started ===')
     console.log('Form data:', formData)
     console.log('Session status:', status)
     console.log('Session user:', session?.user)
+    console.log('Uploaded images count:', uploadedImages.length)
 
     if (!formData.productName || !formData.price || !formData.quantity || !formData.categoryId) {
+      console.log('Validation failed - missing fields')
       setError('الرجاء ملء جميع الحقول المطلوبة (اسم المنتج، الفئة، السعر، والكمية)')
       setLoading(false)
       return
     }
 
     if (!session || !session.user || !session.user.id) {
+      console.log('Validation failed - no session')
       setError('يجب تسجيل الدخول أولاً')
       setLoading(false)
       return
     }
+
+    console.log('Validation passed, preparing FormData...')
 
     try {
       const productFormData = new FormData()
@@ -151,6 +157,7 @@ export default function AddProductPage() {
       productFormData.append('marketerId', session?.user?.id || '')
 
       uploadedImages.forEach((image, index) => {
+        console.log(`Appending image${index}:`, image.name, image.size)
         productFormData.append(`image${index}`, image)
       })
 
@@ -161,10 +168,11 @@ export default function AddProductPage() {
       })
 
       console.log('API response status:', res.status)
+      console.log('API response headers:', Object.fromEntries(res.headers.entries()))
 
       if (res.ok) {
         const data = await res.json()
-        console.log('Product created:', data)
+        console.log('Product created successfully:', data)
         setSuccess('تم إضافة المنتج بنجاح!')
         setFormData({
           productName: '',
@@ -182,14 +190,15 @@ export default function AddProductPage() {
         }, 2000)
       } else {
         const errorData = await res.json()
-        console.error('API error:', errorData)
-        setError(errorData.message || 'فشل في إضافة المنتج')
+        console.error('API error response:', errorData)
+        setError(errorData.error || 'فشل في إضافة المنتج')
       }
     } catch (error) {
       console.error('Submit error:', error)
       setError('حدث خطأ ما. الرجاء المحاولة مرة أخرى.')
     } finally {
       setLoading(false)
+      console.log('=== Form Submit Ended ===')
     }
   }
 
