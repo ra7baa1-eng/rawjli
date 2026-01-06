@@ -9,6 +9,7 @@ import { authOptions } from '@/lib/auth'
 export async function POST(req: NextRequest) {
   try {
     console.log('=== POST /api/marketer/products ===')
+    console.log('Request received at:', new Date().toISOString())
     
     const session = await getServerSession(authOptions)
     console.log('Session:', session)
@@ -19,20 +20,18 @@ export async function POST(req: NextRequest) {
     }
 
     const formData = await req.formData()
-    console.log('FormData received')
+    console.log('FormData received, keys:', Array.from(formData.keys()))
     
     // Extract form fields
     const productName = formData.get('productName')?.toString()?.trim() || ''
     const categoryId = formData.get('categoryId')?.toString() || ''
     const price = formData.get('price')?.toString() || ''
-    const quantity = formData.get('quantity')?.toString() || ''
     const description = formData.get('description')?.toString() || ''
-    const marketingTitle = formData.get('marketingTitle')?.toString() || ''
     const marketingDescription = formData.get('marketingDescription')?.toString() || ''
     const commission = formData.get('commission')?.toString() || ''
     const marketerId = session.user.id
     
-    console.log('Form data extracted:', { productName, categoryId, price, quantity, marketerId })
+    console.log('Form data extracted:', { productName, categoryId, price, marketerId })
     
     // Handle images
     const images: File[] = []
@@ -71,9 +70,9 @@ export async function POST(req: NextRequest) {
     }
     
     // Validate required fields
-    if (!productName || !price || !categoryId || !quantity) {
-      console.log('Validation failed:', { productName: !!productName, price: !!price, categoryId: !!categoryId, quantity: !!quantity })
-      return NextResponse.json({ error: 'الرجاء ملء جميع الحقول المطلوبة: اسم المنتج، الفئة، السعر، والكمية' }, { status: 400 })
+    if (!productName || !price || !categoryId) {
+      console.log('Validation failed:', { productName: !!productName, price: !!price, categoryId: !!categoryId })
+      return NextResponse.json({ error: 'الرجاء ملء جميع الحقول المطلوبة: اسم المنتج، الفئة، والسعر' }, { status: 400 })
     }
 
     console.log('Validation passed, checking category...')
@@ -98,7 +97,6 @@ export async function POST(req: NextRequest) {
       name: productName,
       categoryId,
       price: parseFloat(price),
-      quantity: parseInt(quantity),
       marketerId,
       imageUrlsCount: imageUrls.length
     })
@@ -106,11 +104,10 @@ export async function POST(req: NextRequest) {
     const product = await prisma.product.create({
       data: {
         name: productName,
-        marketingTitle: marketingTitle,
         marketingDescription: marketingDescription,
         basePrice: parseFloat(price),
         priceAfterDiscount: parseFloat(price),
-        stock: parseInt(quantity),
+        stock: 0,
         category: {
           connect: { id: categoryId }
         },

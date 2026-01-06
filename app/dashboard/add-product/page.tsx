@@ -19,9 +19,7 @@ interface FormData {
   productName: string
   categoryId: string
   price: string
-  quantity: string
   commission: string
-  marketingTitle: string
   marketingDescription: string
   description: string
 }
@@ -35,9 +33,7 @@ export default function AddProductPage() {
     productName: '',
     categoryId: '',
     price: '',
-    quantity: '',
     commission: '10',
-    marketingTitle: '',
     marketingDescription: '',
     description: ''
   })
@@ -48,7 +44,7 @@ export default function AddProductPage() {
   const [success, setSuccess] = useState('')
   const [dragActive, setDragActive] = useState(false)
 
-  // Fetch categories - الإصلاح هنا
+  // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -58,7 +54,6 @@ export default function AddProductPage() {
         if (res.ok) {
           const data = await res.json()
           console.log('Categories data:', data)
-          // الإصلاح: التعامل مع كل أشكال الاستجابة الممكنة
           setCategories(data?.data || data || [])
         } else {
           console.error('Failed to fetch categories:', res.status)
@@ -118,6 +113,8 @@ export default function AddProductPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('🔥 handleSubmit called!')
+    
     setLoading(true)
     setError('')
     setSuccess('')
@@ -128,9 +125,9 @@ export default function AddProductPage() {
     console.log('Session user:', session?.user)
     console.log('Uploaded images count:', uploadedImages.length)
 
-    if (!formData.productName || !formData.price || !formData.quantity || !formData.categoryId) {
+    if (!formData.productName || !formData.price || !formData.categoryId) {
       console.log('Validation failed - missing fields')
-      setError('الرجاء ملء جميع الحقول المطلوبة (اسم المنتج، الفئة، السعر، والكمية)')
+      setError('الرجاء ملء جميع الحقول المطلوبة (اسم المنتج، الفئة، والسعر)')
       setLoading(false)
       return
     }
@@ -149,9 +146,7 @@ export default function AddProductPage() {
       productFormData.append('productName', formData.productName)
       productFormData.append('categoryId', formData.categoryId)
       productFormData.append('price', formData.price)
-      productFormData.append('quantity', formData.quantity)
       productFormData.append('commission', formData.commission)
-      productFormData.append('marketingTitle', formData.marketingTitle)
       productFormData.append('marketingDescription', formData.marketingDescription)
       productFormData.append('description', formData.description)
       productFormData.append('marketerId', session?.user?.id || '')
@@ -161,26 +156,24 @@ export default function AddProductPage() {
         productFormData.append(`image${index}`, image)
       })
 
-      console.log('Submitting to API...')
+      console.log('🚀 Submitting to API...')
       const res = await fetch('/api/marketer/products', {
         method: 'POST',
         body: productFormData
       })
 
-      console.log('API response status:', res.status)
-      console.log('API response headers:', Object.fromEntries(res.headers.entries()))
+      console.log('📡 API response status:', res.status)
+      console.log('📋 API response headers:', Object.fromEntries(res.headers.entries()))
 
       if (res.ok) {
         const data = await res.json()
-        console.log('Product created successfully:', data)
+        console.log('✅ Product created successfully:', data)
         setSuccess('تم إضافة المنتج بنجاح!')
         setFormData({
           productName: '',
           categoryId: '',
           price: '',
-          quantity: '',
           commission: '10',
-          marketingTitle: '',
           marketingDescription: '',
           description: ''
         })
@@ -190,11 +183,11 @@ export default function AddProductPage() {
         }, 2000)
       } else {
         const errorData = await res.json()
-        console.error('API error response:', errorData)
+        console.error('❌ API error response:', errorData)
         setError(errorData.error || 'فشل في إضافة المنتج')
       }
     } catch (error) {
-      console.error('Submit error:', error)
+      console.error('💥 Submit error:', error)
       setError('حدث خطأ ما. الرجاء المحاولة مرة أخرى.')
     } finally {
       setLoading(false)
@@ -303,22 +296,6 @@ export default function AddProductPage() {
                   />
                 </div>
               </div>
-
-              <div>
-                <label className="block text-white/80 mb-2">الكمية *</label>
-                <div className="relative">
-                  <Box className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
-                  <input
-                    type="number"
-                    value={formData.quantity}
-                    onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
-                    className="w-full px-4 py-2 pr-10 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-white/40"
-                    placeholder="0"
-                    min="0"
-                    required
-                  />
-                </div>
-              </div>
             </div>
           </div>
 
@@ -330,25 +307,6 @@ export default function AddProductPage() {
             </h2>
             
             <div className="space-y-6">
-              <div>
-                <label className="block text-white/80 mb-2">العنوان التسويقي</label>
-                <input
-                  type="text"
-                  value={formData.marketingTitle}
-                  onChange={(e) => setFormData(prev => ({ ...prev, marketingTitle: e.target.value }))}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-white/40"
-                  placeholder="عنوان جذاب للمنتج"
-                />
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(formData.marketingTitle || formData.productName, 'العنوان التسويقي')}
-                  className="mt-2 px-3 py-1 bg-white/10 hover:bg-white/20 text-white/80 text-sm rounded-lg transition-colors flex items-center"
-                >
-                  <Copy className="ml-1 h-3 w-3" />
-                  نسخ العنوان
-                </button>
-              </div>
-
               <div>
                 <label className="block text-white/80 mb-2">الوصف التسويقي</label>
                 <textarea
@@ -451,6 +409,9 @@ export default function AddProductPage() {
             <button
               type="submit"
               disabled={loading}
+              onClick={(e) => {
+                console.log('🎯 Button clicked!', { loading, formData, hasSession: !!session })
+              }}
               className="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
               {loading ? (
