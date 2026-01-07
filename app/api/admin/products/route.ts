@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
     
     // Extract form fields
     const productName = formData.get('productName') as string
-    const price = parseFloat(formData.get('basePrice') as string) // Map to 'price' field
+    const basePrice = parseFloat(formData.get('basePrice') as string) || 0
     const categoryId = formData.get('categoryId') as string
     const description = formData.get('description') as string
     const quantity = parseInt(formData.get('quantity') as string) || 0
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     const product = await prisma.product.create({
       data: {
         name: productName,
-        basePrice: 0, // Add required field with default value
+        basePrice, // Use the actual form value
         categoryId,
         stock: quantity,
         images: [], // Empty array for now
