@@ -15,10 +15,14 @@ export default function MarketerProducts() {
     fetch('/api/products')
       .then((res) => res.json())
       .then((data) => {
+        console.log('Products data:', data) // Debug log
         setProducts(data.filter((p: any) => p.isActive))
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch((error) => {
+        console.error('Error fetching products:', error)
+        setLoading(false)
+      })
   }, [])
 
   const copyText = async (text: string, type: string, productId: string) => {
@@ -52,7 +56,7 @@ export default function MarketerProducts() {
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (product.marketingTitle && product.marketingTitle.toLowerCase().includes(searchTerm.toLowerCase()))
-    const matchesCategory = !selectedCategory || product.categoryId === selectedCategory
+    const matchesCategory = !selectedCategory || product.category?.id === selectedCategory
     return matchesSearch && matchesCategory
   })
 
@@ -253,7 +257,6 @@ export default function MarketerProducts() {
                         ) : (
                           <Copy className="w-4 h-4" />
                         )}
-                        {copiedId === `${product.id}-title` ? 'تم!' : 'نسخ'}
                       </button>
 
                       <button
@@ -261,7 +264,6 @@ export default function MarketerProducts() {
                         className="flex items-center justify-center gap-2 px-3 py-2 bg-white/10 text-white border border-emerald-500/30 rounded-lg hover:bg-emerald-500/20 transition-all duration-300 font-medium"
                       >
                         <Share2 className="w-4 h-4" />
-                        مشاركة
                       </button>
                     </div>
                   </div>
