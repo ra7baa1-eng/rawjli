@@ -20,7 +20,6 @@ import {
 const sidebarItems = [
   { icon: Home, label: 'الرئيسية', href: '/dashboard' },
   { icon: Package, label: 'المنتجات', href: '/dashboard/products' },
-  { icon: Plus, label: 'إضافة منتج', href: '/dashboard/add-product' },
   { icon: ShoppingCart, label: 'الطلبات', href: '/dashboard/orders' },
   { icon: TrendingUp, label: 'الإحصائيات', href: '/dashboard/analytics' },
   { icon: Users, label: 'العملاء', href: '/dashboard/customers' },
