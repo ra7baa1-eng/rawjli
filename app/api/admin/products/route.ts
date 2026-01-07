@@ -89,6 +89,7 @@ export async function POST(req: NextRequest) {
     const product = await prisma.product.create({
       data: {
         name: productName,
+        basePrice: 0, // Add with default value for schema compatibility
         categoryId,
         stock: quantity,
         images: [], // Empty array for now
