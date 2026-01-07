@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10')
     const search = searchParams.get('search') || ''
 
-    // Simplified where clause without marketingTitle for now
+    // Use only basic fields that exist in database
     const where = search
       ? {
           OR: [
@@ -77,51 +77,24 @@ export async function POST(req: NextRequest) {
     
     // Extract form fields
     const productName = formData.get('productName') as string
-    const basePrice = parseFloat(formData.get('basePrice') as string)
+    const price = parseFloat(formData.get('basePrice') as string) // Map to 'price' field
     const categoryId = formData.get('categoryId') as string
     const description = formData.get('description') as string
-    const marketingTitle = formData.get('marketingTitle') as string
-    const marketingDescription = formData.get('marketingDescription') as string
     const quantity = parseInt(formData.get('quantity') as string) || 0
-    const weight = parseFloat(formData.get('weight') as string) || null
-    const dimensions = formData.get('dimensions') as string
 
     // Validation
-    if (!productName || !basePrice || !categoryId || !description) {
+    if (!productName || !price || !categoryId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Handle images - skip upload for now, just use URLs
-    const imageUrls: string[] = []
-    let imageIndex = 0
-    
-    // For now, just create product without image upload to avoid file system issues
-    // while (formData.get(`image${imageIndex}`) as File) {
-    //   const file = formData.get(`image${imageIndex}`) as File
-    //   const bytes = await file.arrayBuffer()
-    //   const buffer = Buffer.from(bytes)
-    //   
-    //   // Create unique filename
-    //   const timestamp = Date.now()
-    //   const filename = `product-${timestamp}-${imageIndex}.${file.name.split('.').pop()}`
-    //   const filepath = path.join(process.cwd(), 'public', 'uploads', 'products', filename)
-    //   
-    //   // Ensure directory exists
-    //   const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'products')
-    //   await writeFile(filepath, buffer)
-    //   
-    //   imageUrls.push(`/uploads/products/${filename}`)
-    //   imageIndex++
-    // }
-
-    // Create product with simplified fields to match database
+    // Create product with fields that actually exist in database
     const product = await prisma.product.create({
       data: {
         name: productName,
-        basePrice,
+        price: price, // Use 'price' instead of 'basePrice'
         categoryId,
         stock: quantity,
-        images: imageUrls,
+        images: [], // Empty array for now
         isActive: true
       },
       include: {
