@@ -255,6 +255,105 @@ BEGIN
     END IF;
 END $$;
 
+-- Add ccpNumber field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='ccpNumber'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "ccpNumber" TEXT;
+    END IF;
+END $$;
+
+-- Add bankName field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='bankName'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "bankName" TEXT;
+    END IF;
+END $$;
+
+-- Add bankAccountNumber field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='bankAccountNumber'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "bankAccountNumber" TEXT;
+    END IF;
+END $$;
+
+-- Add ribNumber field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='ribNumber'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "ribNumber" TEXT;
+    END IF;
+END $$;
+
+-- Add cnieNumber field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='cnieNumber'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "cnieNumber" TEXT;
+    END IF;
+END $$;
+
+-- Add passportNumber field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='passportNumber'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "passportNumber" TEXT;
+    END IF;
+END $$;
+
+-- Add idCardExpiryDate field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='idCardExpiryDate'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "idCardExpiryDate" TIMESTAMP(3);
+    END IF;
+END $$;
+
+-- Add taxIdNumber field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='taxIdNumber'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "taxIdNumber" TEXT;
+    END IF;
+END $$;
+
+-- Add commercialRegisterNumber field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='commercialRegisterNumber'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "commercialRegisterNumber" TEXT;
+    END IF;
+END $$;
+
 -- =====================================================
 -- Add Missing Fields to Product Table
 -- =====================================================
