@@ -91,6 +91,7 @@ export async function POST(req: NextRequest) {
     const product = await prisma.product.create({
       data: {
         name: productName,
+        basePrice: 0, // Add required field with default value
         categoryId,
         stock: quantity,
         images: [], // Empty array for now
