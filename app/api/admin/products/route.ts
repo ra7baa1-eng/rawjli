@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Handle images - skip upload for now, just use URLs
-    const imageUrls = []
+    const imageUrls: string[] = []
     let imageIndex = 0
     
     // For now, just create product without image upload to avoid file system issues
