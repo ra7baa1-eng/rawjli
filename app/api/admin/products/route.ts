@@ -77,9 +77,7 @@ export async function POST(req: NextRequest) {
     
     // Extract form fields
     const productName = formData.get('productName') as string
-    const basePrice = parseFloat(formData.get('basePrice') as string) || 0
     const categoryId = formData.get('categoryId') as string
-    const description = formData.get('description') as string
     const quantity = parseInt(formData.get('quantity') as string) || 0
 
     // Validation
@@ -87,11 +85,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Create product with minimal required fields
+    // Create product with ONLY fields that exist in database
     const product = await prisma.product.create({
       data: {
         name: productName,
-        basePrice, // Use the actual form value
         categoryId,
         stock: quantity,
         images: [], // Empty array for now
@@ -109,6 +106,16 @@ export async function POST(req: NextRequest) {
     })
   } catch (error) {
     console.error('Error creating product:', error)
+    
+    // If it's a database schema error, return a more helpful message
+    if (error instanceof Error && error.message.includes('does not exist in the current database')) {
+      return NextResponse.json({
+        success: false,
+        error: 'Database schema mismatch. Please contact administrator to update database schema.',
+        details: 'The database structure does not match the expected schema.'
+      }, { status: 500 })
+    }
+    
     return NextResponse.json({
       success: false,
       error: 'Failed to create product'
