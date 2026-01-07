@@ -29,6 +29,8 @@ CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "name" TEXT,
+    "firstName" TEXT, -- Added firstName field
+    "lastName" TEXT, -- Added lastName field
     "password" TEXT, -- Added password field for authentication
     "role" TEXT NOT NULL DEFAULT 'USER',
     "emailVerified" TIMESTAMP(3),
