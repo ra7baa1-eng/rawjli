@@ -20,6 +20,13 @@ DROP TABLE IF EXISTS "Account" CASCADE;
 DROP TABLE IF EXISTS "Session" CASCADE;
 DROP TABLE IF EXISTS "User" CASCADE;
 
+-- Drop existing indexes if they exist
+DROP INDEX IF EXISTS "User_email_key";
+DROP INDEX IF EXISTS "User_username_key";
+DROP INDEX IF EXISTS "User_role_idx";
+DROP INDEX IF EXISTS "User_isActive_idx";
+DROP INDEX IF EXISTS "User_referralCode_idx";
+
 -- =====================================================
 -- Core Tables
 -- =====================================================
