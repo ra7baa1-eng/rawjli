@@ -124,9 +124,14 @@ export default function MarketerProducts() {
                 <div className="relative h-64 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 overflow-hidden">
                   {product.images && product.images.length > 0 ? (
                     <img
-                      src={product.images[0].startsWith('http') ? product.images[0] : `/uploads/products/${product.images[0]}`}
+                      src={product.images[0]}
                       alt={product.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      onError={(e) => {
+                        // Fallback if image fails to load
+                        const target = e.target as HTMLImageElement;
+                        target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2310b981'/%3E%3Ctext x='50' y='50' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='12'%3Eلا توجد صورة%3C/text%3E%3C/svg%3E`;
+                      }}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
@@ -174,6 +179,53 @@ export default function MarketerProducts() {
                     <div className="mb-4 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
                       <p className="text-sm text-emerald-200 font-medium mb-1">العنوان التسويقي:</p>
                       <p className="text-white text-sm line-clamp-2">{product.marketingTitle}</p>
+                      <button
+                        onClick={() => copyText(product.marketingTitle, 'title', product.id)}
+                        className={`mt-2 flex items-center gap-1 text-xs px-2 py-1 rounded transition-all duration-300 ${
+                          copiedId === `${product.id}-title`
+                            ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                            : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20'
+                        }`}
+                      >
+                        {copiedId === `${product.id}-title` ? (
+                          <>
+                            <CheckCircle2 className="w-3 h-3" />
+                            تم النسخ!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            نسخ العنوان
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+
+                  {product.marketingDescription && (
+                    <div className="mb-4 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                      <p className="text-sm text-emerald-200 font-medium mb-2">الوصف التسويقي:</p>
+                      <p className="text-white text-sm line-clamp-3 mb-2">{product.marketingDescription}</p>
+                      <button
+                        onClick={() => copyText(product.marketingDescription, 'desc', product.id)}
+                        className={`w-full flex items-center justify-center gap-1 text-xs px-2 py-1 rounded transition-all duration-300 ${
+                          copiedId === `${product.id}-desc`
+                            ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                            : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20'
+                        }`}
+                      >
+                        {copiedId === `${product.id}-desc` ? (
+                          <>
+                            <CheckCircle2 className="w-3 h-3" />
+                            تم نسخ الوصف!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            نسخ الوصف التسويقي
+                          </>
+                        )}
+                      </button>
                     </div>
                   )}
 
@@ -212,29 +264,6 @@ export default function MarketerProducts() {
                         مشاركة
                       </button>
                     </div>
-
-                    {product.marketingDescription && (
-                      <button
-                        onClick={() => copyText(product.marketingDescription, 'desc', product.id)}
-                        className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-medium transition-all duration-300 ${
-                          copiedId === `${product.id}-desc`
-                            ? 'bg-green-500/20 text-green-300 border border-green-500/30'
-                            : 'bg-white/10 text-white border border-emerald-500/30 hover:bg-emerald-500/20'
-                        }`}
-                      >
-                        {copiedId === `${product.id}-desc` ? (
-                          <>
-                            <CheckCircle2 className="w-4 h-4" />
-                            تم نسخ الوصف!
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-4 h-4" />
-                            نسخ الوصف التسويقي
-                          </>
-                        )}
-                      </button>
-                    )}
                   </div>
 
                   {/* Options */}
