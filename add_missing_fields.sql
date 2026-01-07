@@ -354,6 +354,105 @@ BEGIN
     END IF;
 END $$;
 
+-- Add withdrawableBalance field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='withdrawableBalance'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "withdrawableBalance" DOUBLE PRECISION NOT NULL DEFAULT 0;
+    END IF;
+END $$;
+
+-- Add pendingBalance field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='pendingBalance'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "pendingBalance" DOUBLE PRECISION NOT NULL DEFAULT 0;
+    END IF;
+END $$;
+
+-- Add totalWithdrawn field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='totalWithdrawn'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "totalWithdrawn" DOUBLE PRECISION NOT NULL DEFAULT 0;
+    END IF;
+END $$;
+
+-- Add currentBalance field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='currentBalance'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "currentBalance" DOUBLE PRECISION NOT NULL DEFAULT 0;
+    END IF;
+END $$;
+
+-- Add availableBalance field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='availableBalance'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "availableBalance" DOUBLE PRECISION NOT NULL DEFAULT 0;
+    END IF;
+END $$;
+
+-- Add bankBranch field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='bankBranch'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "bankBranch" TEXT;
+    END IF;
+END $$;
+
+-- Add bankAddress field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='bankAddress'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "bankAddress" TEXT;
+    END IF;
+END $$;
+
+-- Add swiftCode field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='swiftCode'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "swiftCode" TEXT;
+    END IF;
+END $$;
+
+-- Add ibanNumber field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='ibanNumber'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "ibanNumber" TEXT;
+    END IF;
+END $$;
+
 -- =====================================================
 -- Add Missing Fields to Product Table
 -- =====================================================
