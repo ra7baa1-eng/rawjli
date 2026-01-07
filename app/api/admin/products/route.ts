@@ -33,7 +33,6 @@ export async function GET(req: NextRequest) {
         where,
         include: {
           category: true,
-          images: true,
           _count: {
             select: {
               orderItems: true
@@ -93,8 +92,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Handle images
-    const images = []
+    // Handle images - convert to string array
+    const imageUrls = []
     let imageIndex = 0
     
     while (formData.get(`image${imageIndex}`) as File) {
@@ -111,35 +110,24 @@ export async function POST(req: NextRequest) {
       const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'products')
       await writeFile(filepath, buffer)
       
-      images.push({
-        url: `/uploads/products/${filename}`,
-        alt: `${productName} - Image ${imageIndex + 1}`,
-        order: imageIndex
-      })
-      
+      imageUrls.push(`/uploads/products/${filename}`)
       imageIndex++
     }
 
     // Create product
     const product = await prisma.product.create({
       data: {
-        productName,
+        name: productName,
         basePrice,
         categoryId,
-        description,
-        marketingTitle: marketingTitle || null,
-        marketingDescription: marketingDescription || null,
-        quantity,
-        weight,
-        dimensions,
-        images: {
-          create: images
-        },
+        marketingTitle,
+        marketingDescription,
+        stock: quantity,
+        images: imageUrls,
         isActive: true
       },
       include: {
-        category: true,
-        images: true
+        category: true
       }
     })
 
