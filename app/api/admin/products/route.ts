@@ -83,15 +83,14 @@ export async function POST(req: NextRequest) {
     const quantity = parseInt(formData.get('quantity') as string) || 0
 
     // Validation
-    if (!productName || !price || !categoryId) {
+    if (!productName || !categoryId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Create product with fields that actually exist in database
+    // Create product with minimal required fields
     const product = await prisma.product.create({
       data: {
         name: productName,
-        price: price, // Use 'price' instead of 'basePrice'
         categoryId,
         stock: quantity,
         images: [], // Empty array for now
