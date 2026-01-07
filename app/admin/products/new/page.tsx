@@ -1,439 +1,353 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
-import { Upload, X, Copy, Package, Tag, DollarSign, Box, FileText, ArrowLeft, FolderOpen, Image as ImageIcon } from 'lucide-react'
+import { Package, DollarSign, Tag, Save, Upload, Image as ImageIcon, X } from 'lucide-react'
 
-export default function NewProduct() {
+export default function AddProductPage() {
   const router = useRouter()
-  const session = useSession()
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [uploadedImages, setUploadedImages] = useState<File[]>([])
-  const [dragActive, setDragActive] = useState(false)
+  const [message, setMessage] = useState('')
+  const [categories, setCategories] = useState([])
+  const [images, setImages] = useState<File[]>([])
   const [formData, setFormData] = useState({
-    name: '',
-    title: '',
-    description: '',
-    price: '',
-    stock: '',
+    productName: '',
+    basePrice: '',
     categoryId: '',
+    description: '',
+    marketingTitle: '',
+    marketingDescription: '',
+    quantity: '',
+    weight: '',
+    dimensions: ''
   })
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
 
   useEffect(() => {
-    // Fetch categories from API
-    fetch('/api/categories')
-      .then((res) => res.json())
-      .then((data) => {
-        // إصلاح: معالجة البيانات بشكل صحيح سواء كانت { data: [...] } أو [...]
-        const categoriesList = data?.data || data || []
-        setCategories(Array.isArray(categoriesList) ? categoriesList : [])
-      })
-      .catch(() => {
-        // Fallback to mock categories
-        setCategories([
-          { id: '1', name: 'إلكترونيات' },
-          { id: '2', name: 'ملابس' },
-          { id: '3', name: 'أثاث' },
-          { id: '4', name: 'مستحضرات تجميل' },
-          { id: '5', name: 'أطعمة' },
-          { id: '6', name: 'رياضة' }
-        ])
-      })
+    fetchCategories()
   }, [])
 
-  const handleImageUpload = useCallback((files: FileList | null) => {
-    if (!files) return
-    const fileArray = Array.from(files).filter(file => 
-      file.type.startsWith('image/') && file.size <= 10 * 1024 * 1024
-    )
-    setUploadedImages(prev => [...prev, ...fileArray])
-  }, [])
-
-  const removeImage = useCallback((index: number) => {
-    setUploadedImages(prev => prev.filter((_, i) => i !== index))
-  }, [])
-
-  const copyToClipboard = useCallback(async (text: string, type: string) => {
+  const fetchCategories = async () => {
     try {
-      await navigator.clipboard.writeText(text)
-      setSuccess(`تم نسخ ${type} بنجاح!`)
-      setTimeout(() => setSuccess(''), 2000)
-    } catch (err) {
-      setError('فشل في النسخ')
-      setTimeout(() => setError(''), 2000)
+      const res = await fetch('/api/categories')
+      const data = await res.json()
+      setCategories(data?.data || [])
+    } catch (error) {
+      console.error('Error fetching categories:', error)
     }
-  }, [])
+  }
 
-  const handleDrag = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true)
-    } else if (e.type === 'dragleave') {
-      setDragActive(false)
-    }
-  }, [])
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    setImages(prev => [...prev, ...files].slice(0, 5)) // Max 5 images
+  }
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
-    handleImageUpload(e.dataTransfer.files)
-  }, [handleImageUpload])
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Form submitted!', { 
-      formData, 
-      sessionStatus: session.status,
-      sessionData: session.data,
-      loading 
-    })
-    
-    if (session.status === 'loading') {
-      setError('جاري التحقق من الجلسة...')
-      return
-    }
-    
-    if (session.status === 'unauthenticated' || !session.data) {
-      setError('يجب تسجيل الدخول لإضافة منتج')
-      return
-    }
-
-    // Validate marketing description length
-    if (formData.description && formData.description.length > 10000) {
-      setError('الوصف التسويقي طويل جداً. الحد الأقصى هو 10000 حرف.')
-      return
-    }
-
-    if (!formData.name || !formData.price || !formData.stock) {
-      setError('الرجاء ملء الحقول المطلوبة')
-      return
-    }
-
     setLoading(true)
-    setError('')
-    setSuccess('')
+    setMessage('')
 
     try {
-      const productFormData = new FormData()
-      productFormData.append('name', formData.name)
-      productFormData.append('title', formData.title || '')
-      productFormData.append('description', formData.description || '')
-      productFormData.append('price', formData.price)
-      productFormData.append('stock', formData.stock)
-      productFormData.append('categoryId', formData.categoryId || '')
-
-      uploadedImages.forEach((image) => {
-        productFormData.append(`images`, image)
+      const formDataToSend = new FormData()
+      
+      // Add all form fields
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value) formDataToSend.append(key, value)
       })
 
-      console.log('Sending request to /api/products...')
-      const res = await fetch('/api/products', {
+      // Add images
+      images.forEach((image, index) => {
+        formDataToSend.append(`image${index}`, image)
+      })
+
+      const response = await fetch('/api/admin/products', {
         method: 'POST',
-        body: productFormData,
+        body: formDataToSend,
       })
 
-      console.log('Response status:', res.status, res.statusText)
-
-      if (res.ok) {
-        const result = await res.json()
-        console.log('Product created successfully:', result)
-        setSuccess('تم إضافة المنتج بنجاح!')
+      if (response.ok) {
+        setMessage('✅ تم إضافة المنتج بنجاح!')
         setFormData({
-          name: '',
-          title: '',
-          description: '',
-          price: '',
-          stock: '',
+          productName: '',
+          basePrice: '',
           categoryId: '',
+          description: '',
+          marketingTitle: '',
+          marketingDescription: '',
+          quantity: '',
+          weight: '',
+          dimensions: ''
         })
-        setUploadedImages([])
-        
+        setImages([])
         setTimeout(() => {
           router.push('/admin/products')
         }, 2000)
       } else {
-        const errorData = await res.json().catch(() => ({ error: 'فشل في إضافة المنتج' }))
-        console.error('API error:', errorData)
-        setError(errorData.error || errorData.message || 'فشل في إضافة المنتج')
+        const error = await response.json()
+        setMessage('❌ ' + (error.error || 'فشل في إضافة المنتج'))
       }
     } catch (error) {
-      console.error('Frontend error:', error)
-      setError(error instanceof Error ? error.message : 'حدث خطأ أثناء إضافة المنتج')
+      setMessage('❌ حدث خطأ ما')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4 md:p-8">
+    <div className="p-6">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push('/admin')}
-              className="p-2 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition-all duration-300"
-            >
-              <ArrowLeft className="w-5 h-5 text-white" />
-            </button>
-            <h1 className="text-3xl md:text-4xl font-bold text-white">
-              إضافة منتج جديد
-            </h1>
-          </div>
-          <button
-            onClick={() => router.push('/admin/products')}
-            className="px-6 py-3 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-all duration-300"
-          >
-            العودة للمنتجات
-          </button>
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">إضافة منتج جديد</h1>
+          <p className="text-gray-600 mt-2">أدخل معلومات المنتج الجديد بالكامل</p>
         </div>
 
-        {/* Messages */}
-        {success && (
-          <div className="bg-green-500/20 border border-green-500 text-green-300 px-4 py-3 rounded-lg mb-6 animate-pulse">
-            {success}
+        {/* Message */}
+        {message && (
+          <div className={`mb-6 p-4 rounded-lg border ${
+            message.includes('✅') 
+              ? 'bg-green-50 border-green-200 text-green-800' 
+              : 'bg-red-50 border-red-200 text-red-800'
+          }`}>
+            {message}
           </div>
         )}
 
-        {error && (
-          <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg mb-6 animate-pulse">
-            {error}
-          </div>
-        )}
-
-        {/* Main Form */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-6 md:p-8 border border-gray-500/30 shadow-2xl">
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Product Name Section */}
-            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-              <div className="flex items-center gap-3 mb-4">
-                <Package className="w-5 h-5 text-blue-400" />
-                <h2 className="text-xl font-semibold text-white">اسم المنتج</h2>
-              </div>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-3 bg-white/10 border border-gray-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                placeholder="أدخل اسم المنتج..."
-              />
-            </div>
-
-            {/* Marketing Title Section */}
-            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-blue-400" />
-                  <h2 className="text-xl font-semibold text-white">العنوان التسويقي</h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(formData.title, 'العنوان التسويقي')}
-                  className="px-4 py-2 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded-lg hover:bg-blue-500/30 transition-all duration-300 flex items-center gap-2"
-                >
-                  <Copy className="w-4 h-4" />
-                  نسخ
-                </button>
-              </div>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-4 py-3 bg-white/10 border border-gray-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                placeholder="أدخل عنواناً تسويقياً جذاباً..."
-              />
-            </div>
-
-            {/* Category Section */}
-            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <Tag className="w-5 h-5 text-blue-400" />
-                  <h2 className="text-xl font-semibold text-white">الفئة</h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => router.push('/admin/categories')}
-                  className="px-4 py-2 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-lg hover:bg-purple-500/30 transition-all duration-300 flex items-center gap-2"
-                >
-                  <FolderOpen className="w-4 h-4" />
-                  إدارة الفئات
-                </button>
-              </div>
-              <select
-                value={formData.categoryId}
-                onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                className="w-full px-4 py-3 bg-white/10 border border-gray-500/30 rounded-lg text-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-              >
-                <option value="" className="bg-gray-800">اختر الفئة</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id} className="bg-gray-800">
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Price and Stock Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-                <div className="flex items-center gap-3 mb-4">
-                  <DollarSign className="w-5 h-5 text-blue-400" />
-                  <h2 className="text-xl font-semibold text-white">السعر (دج)</h2>
-                </div>
-                <input
-                  type="number"
-                  required
-                  min="0"
-                  step="0.01"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/10 border border-gray-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  placeholder="0.00"
-                />
-              </div>
-
-              <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-                <div className="flex items-center gap-3 mb-4">
-                  <Box className="w-5 h-5 text-blue-400" />
-                  <h2 className="text-xl font-semibold text-white">الكمية</h2>
-                </div>
-                <input
-                  type="number"
-                  required
-                  min="0"
-                  value={formData.stock}
-                  onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/10 border border-gray-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  placeholder="0"
-                />
-              </div>
-            </div>
-
-            {/* Description Section */}
-            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-blue-400" />
-                  <h2 className="text-xl font-semibold text-white">الوصف التسويقي</h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(formData.description, 'الوصف التسويقي')}
-                  className="px-4 py-2 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded-lg hover:bg-blue-500/30 transition-all duration-300 flex items-center gap-2"
-                >
-                  <Copy className="w-4 h-4" />
-                  نسخ الوصف
-                </button>
-              </div>
-              <div className="relative">
-                <textarea
-                  rows={6}
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/10 border border-gray-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all resize-none"
-                  placeholder="أدخل وصفاً تسويقياً مفصلاً..."
-                />
-                <div className="absolute bottom-2 left-2 text-xs text-gray-400">
-                  {formData.description.length}/10000 حرف
-                </div>
-              </div>
-            </div>
-
-            {/* Image Upload Section */}
-            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-              <div className="flex items-center gap-3 mb-4">
-                <Upload className="w-5 h-5 text-blue-400" />
-                <h2 className="text-xl font-semibold text-white">صور المنتج</h2>
-              </div>
-              
-              <div
-                className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${
-                  dragActive 
-                    ? 'border-blue-500 bg-blue-500/10' 
-                    : 'border-gray-500/30 hover:border-gray-500/50'
-                }`}
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-              >
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={(e) => handleImageUpload(e.target.files)}
-                  className="hidden"
-                  id="image-upload"
-                />
-                <label
-                  htmlFor="image-upload"
-                  className="cursor-pointer inline-flex flex-col items-center gap-3"
-                >
-                  <ImageIcon className="w-12 h-12 text-blue-400" />
-                  <span className="text-white font-medium">اختر الصور أو اسحبها هنا</span>
-                  <span className="text-gray-400 text-sm">PNG, JPG, GIF حتى 10MB لكل صورة</span>
-                  <span className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                    اختيار الصور
-                  </span>
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Basic Information */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+              <Package className="h-6 w-6 ml-2 text-blue-600" />
+              المعلومات الأساسية
+            </h2>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  اسم المنتج *
                 </label>
+                <input
+                  type="text"
+                  value={formData.productName}
+                  onChange={(e) => setFormData({...formData, productName: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="أدخل اسم المنتج"
+                  required
+                />
               </div>
 
-              {/* Uploaded Images Preview */}
-              {uploadedImages.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-white font-medium mb-4">الصور المرفوعة ({uploadedImages.length})</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                    {uploadedImages.map((image, index) => (
-                      <div key={index} className="relative group">
-                        <div className="aspect-square rounded-lg overflow-hidden border border-gray-500/30">
-                          <img
-                            src={URL.createObjectURL(image)}
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-600"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                        <p className="text-xs text-gray-400 mt-2 truncate">{image.name}</p>
-                      </div>
-                    ))}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  السعر الأساسي (دج) *
+                </label>
+                <input
+                  type="number"
+                  value={formData.basePrice}
+                  onChange={(e) => setFormData({...formData, basePrice: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  الفئة *
+                </label>
+                <select
+                  value={formData.categoryId}
+                  onChange={(e) => setFormData({...formData, categoryId: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value="">اختر الفئة</option>
+                  {categories.map((category: any) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  الكمية في المخزون
+                </label>
+                <input
+                  type="number"
+                  value={formData.quantity}
+                  onChange={(e) => setFormData({...formData, quantity: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0"
+                  min="0"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                الوصف *
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-32 resize-none"
+                placeholder="أدخل وصف المنتج..."
+                required
+              />
+            </div>
+          </div>
+
+          {/* Marketing Information */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+              <Tag className="h-6 w-6 ml-2 text-purple-600" />
+              معلومات تسويقية
+            </h2>
+            
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  العنوان التسويقي
+                </label>
+                <input
+                  type="text"
+                  value={formData.marketingTitle}
+                  onChange={(e) => setFormData({...formData, marketingTitle: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="أدخل عنواناً تسويقياً جذاباً"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  الوصف التسويقي
+                </label>
+                <textarea
+                  value={formData.marketingDescription}
+                  onChange={(e) => setFormData({...formData, marketingDescription: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 h-32 resize-none"
+                  placeholder="أدخل وصفاً تسويقياً مفصلاً"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Physical Attributes */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+              <Package className="h-6 w-6 ml-2 text-green-600" />
+              المواصفات الفيزيائية
+            </h2>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  الوزن (كجم)
+                </label>
+                <input
+                  type="number"
+                  value={formData.weight}
+                  onChange={(e) => setFormData({...formData, weight: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  الأبعاد (طول × عرض × ارتفاع)
+                </label>
+                <input
+                  type="text"
+                  value={formData.dimensions}
+                  onChange={(e) => setFormData({...formData, dimensions: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder="مثال: 20×15×5 سم"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Product Images */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+              <ImageIcon className="h-6 w-6 ml-2 text-indigo-600" />
+              صور المنتج
+            </h2>
+            
+            <div className="space-y-4">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                <div className="text-center">
+                  <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <div className="flex text-sm text-gray-600">
+                    <label className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500">
+                      <span>اختر الصور</span>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="sr-only"
+                      />
+                    </label>
+                    <p className="mr-2">أو اسحبها هنا</p>
                   </div>
+                  <p className="text-xs text-gray-500">PNG, JPG, GIF حتى 10MB لكل صورة - الحد الأقصى 5 صور</p>
+                </div>
+              </div>
+
+              {images.length > 0 && (
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                  {images.map((image, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={URL.createObjectURL(image)}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
+          </div>
 
-            {/* Submit Buttons */}
-            <div className="flex flex-col md:flex-row gap-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
-              >
-                {loading ? 'جاري الإضافة...' : 'إضافة المنتج'}
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push('/admin/products')}
-                className="px-8 py-4 bg-gray-600 text-white font-bold rounded-lg hover:bg-gray-700 transition-all duration-300 text-lg"
-              >
-                إلغاء
-              </button>
-            </div>
-          </form>
-        </div>
+          {/* Submit Button */}
+          <div className="flex justify-center pt-6">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex items-center px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white ml-2"></div>
+                  جاري الإضافة...
+                </>
+              ) : (
+                <>
+                  <Save className="h-5 w-5 ml-2" />
+                  حفظ المنتج
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )
