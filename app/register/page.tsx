@@ -11,9 +11,6 @@ export default function Register() {
     lastName: '',
     email: '',
     phone: '',
-    baridiMobNumber: '',
-    ccpNumber: '',
-    phoneForCredit: '',
     password: '',
     confirmPassword: '',
   })
@@ -42,9 +39,6 @@ export default function Register() {
           lastName: formData.lastName,
           email: formData.email,
           phone: formData.phone,
-          baridiMobNumber: formData.baridiMobNumber,
-          ccpNumber: formData.ccpNumber,
-          phoneForCredit: formData.phoneForCredit,
           password: formData.password,
         }),
       })
@@ -147,42 +141,6 @@ export default function Register() {
                   className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-xl text-white placeholder-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-300"
                   placeholder="05xxxxxxxx"
                   required
-                />
-              </div>
-
-              {/* Baridi Mob */}
-              <div className="space-y-2">
-                <label className="text-pink-300 font-semibold block">رقم باريدي موب</label>
-                <input
-                  type="text"
-                  value={formData.baridiMobNumber}
-                  onChange={(e) => setFormData({ ...formData, baridiMobNumber: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-xl text-white placeholder-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-300"
-                  placeholder="رقم حساب باريدي موب"
-                />
-              </div>
-
-              {/* CCP */}
-              <div className="space-y-2">
-                <label className="text-pink-300 font-semibold block">رقم الحساب البريدي (CCP)</label>
-                <input
-                  type="text"
-                  value={formData.ccpNumber}
-                  onChange={(e) => setFormData({ ...formData, ccpNumber: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-xl text-white placeholder-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-300"
-                  placeholder="رقم CCP"
-                />
-              </div>
-
-              {/* Phone for Credit */}
-              <div className="space-y-2">
-                <label className="text-pink-300 font-semibold block">رقم الهاتف للشحن</label>
-                <input
-                  type="tel"
-                  value={formData.phoneForCredit}
-                  onChange={(e) => setFormData({ ...formData, phoneForCredit: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/10 border border-pink-500/30 rounded-xl text-white placeholder-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-300"
-                  placeholder="رقم الهاتف لشحن الرصيد"
                 />
               </div>
 
