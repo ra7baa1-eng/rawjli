@@ -167,6 +167,94 @@ BEGIN
     END IF;
 END $$;
 
+-- Add baridiMobNumber field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='baridiMobNumber'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "baridiMobNumber" TEXT;
+    END IF;
+END $$;
+
+-- Add ninNumber field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='ninNumber'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "ninNumber" TEXT;
+    END IF;
+END $$;
+
+-- Add dateOfBirth field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='dateOfBirth'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "dateOfBirth" TIMESTAMP(3);
+    END IF;
+END $$;
+
+-- Add gender field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='gender'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "gender" TEXT;
+    END IF;
+END $$;
+
+-- Add website field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='website'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "website" TEXT;
+    END IF;
+END $$;
+
+-- Add bio field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='bio'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "bio" TEXT;
+    END IF;
+END $$;
+
+-- Add socialLinks field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='socialLinks'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "socialLinks" TEXT;
+    END IF;
+END $$;
+
+-- Add preferences field if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='User' AND column_name='preferences'
+    ) THEN
+        ALTER TABLE "User" ADD COLUMN "preferences" TEXT;
+    END IF;
+END $$;
+
 -- =====================================================
 -- Add Missing Fields to Product Table
 -- =====================================================
