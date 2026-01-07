@@ -24,31 +24,47 @@ DROP TABLE IF EXISTS "User" CASCADE;
 -- Core Tables
 -- =====================================================
 
--- Users Table
+-- Users Table (COMPLETE - All possible fields)
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "name" TEXT,
-    "firstName" TEXT, -- Added firstName field
-    "lastName" TEXT, -- Added lastName field
-    "password" TEXT, -- Added password field for authentication
+    "firstName" TEXT,
+    "lastName" TEXT,
+    "username" TEXT,
+    "password" TEXT,
     "role" TEXT NOT NULL DEFAULT 'USER',
     "emailVerified" TIMESTAMP(3),
     "image" TEXT,
+    "avatar" TEXT,
     "phone" TEXT,
+    "mobile" TEXT,
     "address" TEXT,
+    "city" TEXT,
+    "country" TEXT,
+    "zipCode" TEXT,
     "balance" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "commission" DOUBLE PRECISION NOT NULL DEFAULT 10,
     "totalEarnings" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "totalSales" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "referralCode" TEXT,
+    "referredBy" TEXT,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "isBanned" BOOLEAN NOT NULL DEFAULT false,
+    "banReason" TEXT,
+    "lastLoginAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
 
--- Create unique index for email
+-- Create unique indexes for User table
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
+CREATE INDEX "User_role_idx" ON "User"("role");
+CREATE INDEX "User_isActive_idx" ON "User"("isActive");
+CREATE INDEX "User_referralCode_idx" ON "User"("referralCode");
 
 -- =====================================================
 -- Geographic Tables
