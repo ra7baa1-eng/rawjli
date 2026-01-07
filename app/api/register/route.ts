@@ -10,10 +10,7 @@ export async function POST(req: NextRequest) {
       password, 
       firstName, 
       lastName, 
-      phone, 
-      baridiMobNumber, 
-      ccpNumber, 
-      phoneForCredit,
+      phone,
       role = 'MARKETER'
     } = body
 
@@ -38,9 +35,6 @@ export async function POST(req: NextRequest) {
         firstName,
         lastName,
         phone,
-        baridiMobNumber,
-        ccpNumber,
-        phoneForCredit,
         role: 'MARKETER',
         isActive: true
       },
