@@ -29,6 +29,7 @@ CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "name" TEXT,
+    "password" TEXT, -- Added password field for authentication
     "role" TEXT NOT NULL DEFAULT 'USER',
     "emailVerified" TIMESTAMP(3),
     "image" TEXT,
