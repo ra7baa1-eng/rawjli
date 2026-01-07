@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Settings, Bell, Shield, Database, Palette, Globe, Save, Upload } from 'lucide-react'
+import { Settings, Bell, Shield, Database, Palette, Globe, Save, Upload, DollarSign } from 'lucide-react'
 
 export default function AdminSettings() {
   const [loading, setLoading] = useState(false)
