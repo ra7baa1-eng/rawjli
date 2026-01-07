@@ -85,20 +85,54 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Create product with ONLY fields that exist in database
-    const product = await prisma.product.create({
-      data: {
-        name: productName,
-        basePrice: 0, // Add with default value for schema compatibility
-        categoryId,
-        stock: quantity,
-        images: [], // Empty array for now
-        isActive: true
-      },
-      include: {
-        category: true
-      }
-    })
+    // Create product with retry logic for prepared statement issues
+    let product
+    try {
+      product = await prisma.product.create({
+        data: {
+          name: productName,
+          basePrice: 0, // Add with default value for schema compatibility
+          categoryId,
+          stock: quantity,
+          images: [], // Empty array for now
+          isActive: true
+        },
+        include: {
+          category: true
+        }
+      })
+    } catch (dbError) {
+      console.error('Database error on first attempt:', dbError)
+      
+      // Retry with a fresh connection
+      await prisma.$disconnect()
+      
+      // Recreate connection
+      const { PrismaClient } = await import('@prisma/client')
+      const freshPrisma = new PrismaClient({
+        datasources: {
+          db: {
+            url: process.env.DATABASE_URL,
+          },
+        },
+      })
+      
+      product = await freshPrisma.product.create({
+        data: {
+          name: productName,
+          basePrice: 0,
+          categoryId,
+          stock: quantity,
+          images: [],
+          isActive: true
+        },
+        include: {
+          category: true
+        }
+      })
+      
+      await freshPrisma.$disconnect()
+    }
 
     return NextResponse.json({
       success: true,
@@ -112,8 +146,17 @@ export async function POST(req: NextRequest) {
     if (error instanceof Error && error.message.includes('does not exist in the current database')) {
       return NextResponse.json({
         success: false,
-        error: 'Database schema mismatch. Please contact administrator to update database schema.',
-        details: 'The database structure does not match the expected schema.'
+        error: 'Database schema mismatch. Please run the database_setup.sql file in Supabase.',
+        details: 'The database structure does not match expected schema.'
+      }, { status: 500 })
+    }
+    
+    // If it's a prepared statement error, return a specific message
+    if (error instanceof Error && error.message.includes('prepared statement')) {
+      return NextResponse.json({
+        success: false,
+        error: 'Database connection issue. Please try again.',
+        details: 'Prepared statement conflict detected.'
       }, { status: 500 })
     }
     
