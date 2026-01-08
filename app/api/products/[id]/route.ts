@@ -34,32 +34,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   } catch (error) {
     console.error('Error fetching product:', error)
     
-    // Return mock product data if database fails
-    const mockProduct = {
-      id: params.id,
-      name: 'منتج تجريبي',
-      marketingTitle: 'عنوان تسويقي تجريبي',
-      marketingDescription: 'هذا وصف تسويقي تجريبي للمنتج. يحتوي على تفاصيل كاملة عن المنتج ومميزاته.',
-      basePrice: 5000,
-      priceAfterDiscount: 4500,
-      images: [
-        'https://via.placeholder.com/400x300/10b981/ffffff?text=Product+Image+1',
-        'https://via.placeholder.com/400x300/059669/ffffff?text=Product+Image+2'
-      ],
-      commission: 10,
-      stock: 100,
-      isActive: true,
-      category: {
-        id: '1',
-        name: 'إلكترونيات'
-      },
-      options: [],
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-    
-    console.log('Returning mock product data')
-    return NextResponse.json(mockProduct)
+    // Return error instead of mock data - we want real products
+    return NextResponse.json({ 
+      error: 'Failed to fetch product',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
 

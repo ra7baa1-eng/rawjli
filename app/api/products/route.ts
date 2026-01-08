@@ -6,6 +6,11 @@ import { Prisma } from '@prisma/client'
 
 export async function GET(req: NextRequest) {
   try {
+    console.log('Fetching products list...')
+    
+    // Test database connection first
+    await prisma.$queryRaw`SELECT 1`
+    
     const { searchParams } = new URL(req.url)
     const categoryId = searchParams.get('categoryId')
     const offerId = searchParams.get('offerId')
@@ -27,9 +32,16 @@ export async function GET(req: NextRequest) {
         }
       }
     })
+    
+    console.log('Found products:', products.length)
+    console.log('Products data:', JSON.stringify(products, null, 2))
+    
     return NextResponse.json(products)
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 })
+    console.error('Error fetching products:', error)
+    
+    // Return empty array if database fails
+    return NextResponse.json([])
   }
 }
 
