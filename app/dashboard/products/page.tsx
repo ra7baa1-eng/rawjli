@@ -13,14 +13,27 @@ export default function MarketerProducts() {
 
   useEffect(() => {
     fetch('/api/products')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`)
+        }
+        return res.json()
+      })
       .then((data) => {
         console.log('Products data:', data) // Debug log
-        setProducts(data.filter((p: any) => p.isActive))
+        console.log('Number of products:', data.length)
+        
+        if (data.error) {
+          console.error('API Error:', data.error)
+          setProducts([])
+        } else {
+          setProducts(data.filter((p: any) => p.isActive))
+        }
         setLoading(false)
       })
       .catch((error) => {
         console.error('Error fetching products:', error)
+        setProducts([])
         setLoading(false)
       })
   }, [])
