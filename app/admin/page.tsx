@@ -8,16 +8,44 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Mock stats for now since API might not work
-    const mockStats = {
-      totalOrders: 156,
-      deliveredOrders: 142,
-      totalMarketers: 89,
-      pendingWithdrawals: 12,
-      totalRevenue: 2450000
+    // Fetch real stats from API
+    const fetchStats = async () => {
+      try {
+        const [ordersRes, usersRes, withdrawalsRes] = await Promise.all([
+          fetch('/api/stats/orders'),
+          fetch('/api/stats/users'),
+          fetch('/api/stats/withdrawals')
+        ])
+
+        const ordersData = await ordersRes.json()
+        const usersData = await usersRes.json()
+        const withdrawalsData = await withdrawalsRes.json()
+
+        const realStats = {
+          totalOrders: ordersData.total || 0,
+          deliveredOrders: ordersData.delivered || 0,
+          totalMarketers: usersData.marketers || 0,
+          pendingWithdrawals: withdrawalsData.pending || 0,
+          totalRevenue: ordersData.revenue || 0
+        }
+
+        setStats(realStats)
+      } catch (error) {
+        console.error('Error fetching stats:', error)
+        // Fallback to mock stats
+        const mockStats = {
+          totalOrders: 156,
+          deliveredOrders: 142,
+          totalMarketers: 89,
+          pendingWithdrawals: 12,
+          totalRevenue: 2450000
+        }
+        setStats(mockStats)
+      }
+      setLoading(false)
     }
-    setStats(mockStats)
-    setLoading(false)
+
+    fetchStats()
   }, [])
 
   if (loading) {
@@ -33,10 +61,21 @@ export default function AdminDashboard() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-blue-500 mb-2">
-            لوحة تحكم روجلي
-          </h1>
-          <p className="text-gray-300">منصة التجارة الإلكترونية الجزائرية الاحترافية</p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-blue-500 mb-2">
+                لوحة تحكم روجلي
+              </h1>
+              <p className="text-gray-300">منصة التجارة الإلكترونية الجزائرية الاحترافية</p>
+            </div>
+            <div className="text-left">
+              <div className="bg-black/40 backdrop-blur-lg rounded-xl p-4 border border-pink-500/30">
+                <p className="text-sm text-gray-400 mb-1">الأدمن</p>
+                <p className="text-white font-semibold">alumabdo0@gmail.com</p>
+                <p className="text-xs text-pink-400 mt-1">مدير النظام</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Stats Grid */}
