@@ -13,13 +13,15 @@ export default function AddProductPage() {
   const [formData, setFormData] = useState({
     productName: '',
     basePrice: '',
+    priceAfterDiscount: '',
     categoryId: '',
     description: '',
     marketingTitle: '',
     marketingDescription: '',
     quantity: '',
     weight: '',
-    dimensions: ''
+    dimensions: '',
+    commission: ''
   })
 
   useEffect(() => {
@@ -73,13 +75,15 @@ export default function AddProductPage() {
         setFormData({
           productName: '',
           basePrice: '',
+          priceAfterDiscount: '',
           categoryId: '',
           description: '',
           marketingTitle: '',
           marketingDescription: '',
           quantity: '',
           weight: '',
-          dimensions: ''
+          dimensions: '',
+          commission: ''
         })
         setImages([])
         setTimeout(() => {
@@ -152,6 +156,21 @@ export default function AddProductPage() {
                   step="0.01"
                   min="0"
                   required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  السعر بعد الخصم (دج)
+                </label>
+                <input
+                  type="number"
+                  value={formData.priceAfterDiscount}
+                  onChange={(e) => setFormData({...formData, priceAfterDiscount: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
                 />
               </div>
 
@@ -232,8 +251,25 @@ export default function AddProductPage() {
                   value={formData.marketingDescription}
                   onChange={(e) => setFormData({...formData, marketingDescription: e.target.value})}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 h-32 resize-none"
-                  placeholder="أدخل وصفاً تسويقياً مفصلاً"
+                  placeholder="أدخل وصفاً تسويقياً جذاباً..."
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  عمولة المسوق (%)
+                </label>
+                <input
+                  type="number"
+                  value={formData.commission}
+                  onChange={(e) => setFormData({...formData, commission: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="0"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                />
+                <p className="text-xs text-gray-500 mt-1">اتركه فارغاً للعمولة الافتراضية</p>
               </div>
             </div>
           </div>
