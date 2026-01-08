@@ -122,7 +122,8 @@ export default function MarketerProducts() {
             {filteredProducts.map((product) => (
               <div
                 key={product.id}
-                className="bg-black/40 backdrop-blur-lg rounded-2xl overflow-hidden border border-emerald-500/30 shadow-2xl hover:border-emerald-400/50 transition-all duration-300 group"
+                className="bg-black/40 backdrop-blur-lg rounded-2xl overflow-hidden border border-emerald-500/30 shadow-2xl hover:border-emerald-400/50 transition-all duration-300 group cursor-pointer"
+                onClick={() => window.location.href = `/dashboard/products/${product.id}`}
               >
                 {/* Product Image */}
                 <div className="relative h-64 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 overflow-hidden">

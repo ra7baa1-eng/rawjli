@@ -19,6 +19,7 @@ function CreateOrderForm() {
     customerFirstName: '',
     customerLastName: '',
     customerPhone: '',
+    customerAddress: '',
     wilayaCode: '',
     communeId: '',
     deliveryMethod: 'HOME',
@@ -196,7 +197,7 @@ function CreateOrderForm() {
                       />
                     </div>
 
-                    <div className="md:col-span-2">
+                    <div>
                       <label className="block text-emerald-200 font-medium mb-2 flex items-center gap-2">
                         <Phone className="w-4 h-4" />
                         رقم الهاتف
@@ -209,6 +210,20 @@ function CreateOrderForm() {
                         }
                         className="w-full px-4 py-3 bg-white/10 border border-emerald-500/30 rounded-lg text-white placeholder-emerald-200/50 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
                         placeholder="0551234567"
+                        required
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-emerald-200 font-medium mb-2">عنوان العميل</label>
+                      <input
+                        type="text"
+                        value={formData.customerAddress || ''}
+                        onChange={(e) =>
+                          setFormData({ ...formData, customerAddress: e.target.value })
+                        }
+                        className="w-full px-4 py-3 bg-white/10 border border-emerald-500/30 rounded-lg text-white placeholder-emerald-200/50 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
+                        placeholder="العنوان الكامل للعميل"
                         required
                       />
                     </div>
