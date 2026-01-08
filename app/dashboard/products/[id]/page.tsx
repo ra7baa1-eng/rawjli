@@ -15,12 +15,21 @@ export default function ProductDetail() {
   useEffect(() => {
     if (params.id) {
       fetch(`/api/products/${params.id}`)
-        .then((res) => res.json())
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error('Product not found')
+          }
+          return res.json()
+        })
         .then((data) => {
+          console.log('Product data:', data) // Debug log
           setProduct(data)
           setLoading(false)
         })
-        .catch(() => setLoading(false))
+        .catch((error) => {
+          console.error('Error fetching product:', error)
+          setLoading(false)
+        })
     }
   }, [params.id])
 
@@ -118,6 +127,11 @@ export default function ProductDetail() {
                     src={product.images[0]}
                     alt={product.name}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.error('Image failed to load:', product.images[0])
+                      const target = e.target as HTMLImageElement;
+                      target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2310b981'/%3E%3Ctext x='50' y='50' text-anchor='middle' dy='.3em' fill='white' font-family='Arial' font-size='12'%3Eلا توجد صورة%3C/text%3E%3C/svg%3E`;
+                    }}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
@@ -163,12 +177,22 @@ export default function ProductDetail() {
             <div className="bg-black/40 backdrop-blur-lg rounded-2xl p-6 border border-emerald-500/30 shadow-2xl">
               <h1 className="text-3xl font-bold text-white mb-4">{product.name}</h1>
 
+              {/* Debug Info */}
+              <div className="mb-4 p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                <p className="text-xs text-yellow-300">Debug Info:</p>
+                <p className="text-xs text-gray-300">Base Price: {product.basePrice}</p>
+                <p className="text-xs text-gray-300">Price After Discount: {product.priceAfterDiscount}</p>
+                <p className="text-xs text-gray-300">Images: {JSON.stringify(product.images)}</p>
+                <p className="text-xs text-gray-300">Marketing Title: {product.marketingTitle}</p>
+                <p className="text-xs text-gray-300">Marketing Description: {product.marketingDescription?.substring(0, 50)}...</p>
+              </div>
+
               {/* Price */}
               <div className="mb-6">
                 <div className="flex items-center gap-2">
                   <DollarSign className="w-6 h-6 text-emerald-400" />
                   <span className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
-                    {product.priceAfterDiscount || product.basePrice} دج
+                    {product.priceAfterDiscount || product.basePrice || 0} دج
                   </span>
                 </div>
                 {product.priceAfterDiscount && (
